@@ -298,27 +298,41 @@ export const deleteBooking = async (id: number) => {
 
 // ==================== CONTACT APIs ====================
 
+// ✅ แก้ไข sendContact ให้ส่ง JSON แทน FormData
 export const sendContact = async (name: string, email: string, subject: string, message: string, file?: File) => {
   try {
-    const formData = new FormData();
-    formData.append('name', name);
-    formData.append('email', email);
-    formData.append('subject', subject);
-    formData.append('message', message);
-    if (file) {
-      formData.append('file', file);
-    }
-
     const token = getAuthToken();
-    const headers: HeadersInit = {};
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
+    
+    // ถ้ามีไฟล์แนบ ใช้ FormData
+    if (file) {
+      const formData = new FormData();
+      formData.append('name', name);
+      formData.append('email', email);
+      formData.append('subject', subject);
+      formData.append('message', message);
+      formData.append('file', file);
 
+      const headers: HeadersInit = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const response = await fetchWithTimeout(`${API_URL}/contacts`, {
+        method: 'POST',
+        headers,
+        body: formData,
+      });
+      return handleResponse(response);
+    }
+    
+    // ✅ ถ้าไม่มีไฟล์ ใช้ JSON
     const response = await fetchWithTimeout(`${API_URL}/contacts`, {
       method: 'POST',
-      headers,
-      body: formData,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': token ? `Bearer ${token}` : '',
+      },
+      body: JSON.stringify({ name, email, subject, message }),
     });
     return handleResponse(response);
   } catch (error) {
@@ -429,4 +443,4 @@ export default {
   // Reports
   getUserActivity,
   getRegistrationTrends,
-}; 
+};

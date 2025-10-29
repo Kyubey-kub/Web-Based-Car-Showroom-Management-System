@@ -52,6 +52,7 @@ if (isEmailEnabled) {
   console.warn('⚠️  Email environment variables not set. Email functionality will be disabled.');
 }
 
+// ✅ ส่งข้อความติดต่อ (แก้ไขแล้ว - รองรับ subject)
 export const sendContact = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
   if (!req.user) {
     res.status(401).json({ error: 'Unauthorized' });
@@ -59,11 +60,14 @@ export const sendContact = async (req: AuthenticatedRequest, res: Response, next
   }
 
   try {
-    const { name, email, message } = req.body;
+    const { name, email, subject, message } = req.body;
     const file = req.file;
 
-    if (!name || !email || !message) {
-      res.status(400).json({ error: 'Name, email, and message are required' });
+    console.log('sendContact called with:', { userId: req.user.id, name, email, subject, message, file: file?.filename });
+
+    // ✅ ตรวจสอบข้อมูลที่จำเป็น (เพิ่ม subject)
+    if (!name || !email || !subject || !message) {
+      res.status(400).json({ error: 'Name, email, subject, and message are required' });
       return;
     }
 
@@ -73,11 +77,14 @@ export const sendContact = async (req: AuthenticatedRequest, res: Response, next
       return;
     }
 
+    // ✅ บันทึกข้อความลงฐานข้อมูล (เพิ่ม subject)
     const filePath = file ? `/uploads/${file.filename}` : null;
-    await db.query(
-      'INSERT INTO contacts (user_id, name, email, message, file_name, created_at) VALUES (?, ?, ?, ?, ?, NOW())',
-      [req.user.id, name, email, message, filePath]
+    const [result]: any = await db.query(
+      'INSERT INTO contacts (user_id, name, email, subject, message, file_name, created_at) VALUES (?, ?, ?, ?, ?, ?, NOW())',
+      [req.user.id, name, email, subject, message, filePath]
     );
+
+    console.log('✅ Contact message saved:', result);
 
     // ส่งอีเมลเฉพาะถ้าเปิดใช้งาน
     if (isEmailEnabled && transporter) {
@@ -85,12 +92,23 @@ export const sendContact = async (req: AuthenticatedRequest, res: Response, next
         const mailOptions: nodemailer.SendMailOptions = {
           from: `"Contact Form" <${process.env.EMAIL_USER}>`,
           to: process.env.EMAIL_ADMIN!,
-          subject: `New Contact Message from ${name}`,
+          subject: `New Contact Message: ${subject}`,
           text: `
-            Name: ${name}
-            Email: ${email}
+            New contact message received:
+            
+            From: ${name} (${email})
+            Subject: ${subject}
             Message: ${message}
-            ${filePath ? `Attachment: ${filePath}` : ''}
+            
+            ${filePath ? `Attachment: ${filePath}` : 'No attachment'}
+          `,
+          html: `
+            <h2>New Contact Message</h2>
+            <p><strong>From:</strong> ${name} (${email})</p>
+            <p><strong>Subject:</strong> ${subject}</p>
+            <p><strong>Message:</strong></p>
+            <p>${message}</p>
+            ${filePath ? `<p><strong>Attachment:</strong> ${filePath}</p>` : ''}
           `,
           attachments: file
             ? [
@@ -112,15 +130,22 @@ export const sendContact = async (req: AuthenticatedRequest, res: Response, next
       console.log('📧 Email disabled - Contact saved to database only');
     }
 
-    notifyAdmins(`New contact message from ${name}: ${message}`);
+    notifyAdmins(`New contact message from ${name}: ${subject}`);
 
-    res.status(200).json({ message: 'Contact message sent successfully' });
+    res.status(200).json({ 
+      message: 'Contact message sent successfully',
+      contactId: result.insertId 
+    });
   } catch (error) {
     console.error('Error in sendContact:', error);
-    res.status(500).json({ error: 'Failed to send contact message', details: error instanceof Error ? error.message : 'Unknown error' });
+    res.status(500).json({ 
+      error: 'Failed to send contact message', 
+      details: error instanceof Error ? error.message : 'Unknown error' 
+    });
   }
 };
 
+// ✅ ดึงข้อความทั้งหมด (Admin only) - แก้ไขให้ส่ง Array โดยตรง
 export const getContacts = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
   if (!req.user) {
     res.status(401).json({ error: 'Unauthorized' });
@@ -132,14 +157,42 @@ export const getContacts = async (req: AuthenticatedRequest, res: Response, next
   }
 
   try {
-    const [rows] = await db.query<(RowDataPacket & Contact)[]>('SELECT * FROM contacts ORDER BY created_at DESC');
+    const { status } = req.query;
+    
+    let query = `
+      SELECT 
+        c.*,
+        u.name as user_name,
+        u.email as user_email
+      FROM contacts c
+      LEFT JOIN users u ON c.user_id = u.id
+    `;
+    
+    const params: any[] = [];
+    
+    if (status && ['pending', 'replied', 'closed'].includes(status as string)) {
+      query += ' WHERE c.status = ?';
+      params.push(status);
+    }
+    
+    query += ' ORDER BY c.created_at DESC';
+    
+    const [rows] = await db.query<(RowDataPacket & Contact)[]>(query, params);
+    
+    console.log(`✅ Fetched ${rows.length} contacts`);
+    
+    // ✅ แก้ไข: ส่ง Array โดยตรง แทนที่จะเป็น Object
     res.status(200).json(rows);
   } catch (error) {
     console.error('Error in getContacts:', error);
-    res.status(500).json({ error: 'Failed to fetch contacts', details: error instanceof Error ? error.message : 'Unknown error' });
+    res.status(500).json({ 
+      error: 'Failed to fetch contacts', 
+      details: error instanceof Error ? error.message : 'Unknown error' 
+    });
   }
 };
 
+// ✅ ตอบกลับข้อความ (Admin only - แก้ไขแล้ว)
 export const replyContact = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
   if (!req.user) {
     res.status(401).json({ error: 'Unauthorized' });
@@ -159,11 +212,21 @@ export const replyContact = async (req: AuthenticatedRequest, res: Response, nex
       return;
     }
 
-    const [contact] = await db.query<(RowDataPacket & Contact)[]>('SELECT * FROM contacts WHERE id = ?', [id]);
+    const [contact] = await db.query<(RowDataPacket & Contact)[]>(
+      'SELECT * FROM contacts WHERE id = ?', 
+      [id]
+    );
+    
     if (contact.length === 0) {
       res.status(404).json({ error: 'Contact not found' });
       return;
     }
+
+    // ✅ อัปเดตการตอบกลับและ status
+    await db.query(
+      'UPDATE contacts SET reply = ?, status = ? WHERE id = ?',
+      [reply, 'replied', id]
+    );
 
     // ส่งอีเมลเฉพาะถ้าเปิดใช้งาน
     if (isEmailEnabled && transporter) {
@@ -171,8 +234,14 @@ export const replyContact = async (req: AuthenticatedRequest, res: Response, nex
         const mailOptions: nodemailer.SendMailOptions = {
           from: `"Admin" <${process.env.EMAIL_USER}>`,
           to: contact[0].email,
-          subject: `Re: Your Message from ${contact[0].name}`,
+          subject: `Re: ${contact[0].subject || 'Your Message'}`,
           text: `Dear ${contact[0].name},\n\n${reply}\n\nBest regards,\nAdmin`,
+          html: `
+            <p>Dear ${contact[0].name},</p>
+            <p>Thank you for contacting us. Here is our response:</p>
+            <blockquote style="border-left: 3px solid #ccc; padding-left: 15px; color: #555;">${reply}</blockquote>
+            <p>Best regards,<br><strong>Car Showroom Team</strong></p>
+          `
         };
 
         await transporter.sendMail(mailOptions);
@@ -185,16 +254,19 @@ export const replyContact = async (req: AuthenticatedRequest, res: Response, nex
       console.log('📧 Email disabled - Reply saved to database only');
     }
 
-    await db.query('UPDATE contacts SET status = ? WHERE id = ?', ['replied', id]);
     notifyAdmins(`Replied to contact message from ${contact[0].name}`);
 
     res.status(200).json({ message: 'Contact replied successfully' });
   } catch (error) {
     console.error('Error in replyContact:', error);
-    res.status(500).json({ error: 'Failed to reply to contact', details: error instanceof Error ? error.message : 'Unknown error' });
+    res.status(500).json({ 
+      error: 'Failed to reply to contact', 
+      details: error instanceof Error ? error.message : 'Unknown error' 
+    });
   }
 };
 
+// ✅ ลบข้อความ (Admin only)
 export const deleteContact = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
   if (!req.user) {
     res.status(401).json({ error: 'Unauthorized' });
@@ -213,23 +285,33 @@ export const deleteContact = async (req: AuthenticatedRequest, res: Response, ne
       return;
     }
 
-    const [contact] = await db.query<(RowDataPacket & Contact)[]>('SELECT file_name FROM contacts WHERE id = ?', [id]);
+    const [contact] = await db.query<(RowDataPacket & Contact)[]>(
+      'SELECT file_name FROM contacts WHERE id = ?', 
+      [id]
+    );
+    
     if (contact.length === 0) {
       res.status(404).json({ error: 'Contact not found' });
       return;
     }
 
+    // ลบไฟล์แนบถ้ามี
     if (contact[0].file_name) {
       const filePath = path.join(__dirname, '../../uploads', path.basename(contact[0].file_name));
       if (fs.existsSync(filePath)) {
         fs.unlinkSync(filePath);
+        console.log('✅ File deleted:', filePath);
       }
     }
 
     await db.query('DELETE FROM contacts WHERE id = ?', [id]);
+    
     res.status(200).json({ message: 'Contact deleted successfully' });
   } catch (error) {
     console.error('Error in deleteContact:', error);
-    res.status(500).json({ error: 'Failed to delete contact', details: error instanceof Error ? error.message : 'Unknown error' });
+    res.status(500).json({ 
+      error: 'Failed to delete contact', 
+      details: error instanceof Error ? error.message : 'Unknown error' 
+    });
   }
 };

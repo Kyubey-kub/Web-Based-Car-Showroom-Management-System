@@ -14,10 +14,9 @@ dotenv.config();
 
 const app = express();
 
-// ตั้งค่า CORS - รองรับทั้ง Development และ Production (รวม Vercel Preview URLs)
+// ตั้งค่า CORS - รองรับทั้ง Development และ Production
 const corsOptions = {
   origin: function (origin: string | undefined, callback: Function) {
-    // รายการ domains ที่อนุญาต
     const allowedOrigins = [
       'http://localhost:3000',
       'http://localhost:5173',
@@ -28,35 +27,30 @@ const corsOptions = {
 
     console.log(`[CORS] Request from origin: ${origin || 'undefined'}`);
     
-    // อนุญาตให้ request ที่ไม่มี origin (Postman, mobile apps)
     if (!origin) {
       console.log(`[CORS] Allowed: No origin (Postman/mobile)`);
       callback(null, true);
       return;
     }
 
-    // ตรวจสอบว่า origin ตรงกับรายการที่อนุญาตหรือไม่
     if (allowedOrigins.includes(origin)) {
       console.log(`[CORS] Allowed origin: ${origin}`);
       callback(null, true);
       return;
     }
 
-    // อนุญาต Vercel preview/deployment URLs (*.vercel.app)
     if (origin.endsWith('.vercel.app')) {
       console.log(`[CORS] Allowed Vercel preview: ${origin}`);
       callback(null, true);
       return;
     }
 
-    // อนุญาต Railway preview URLs (*.up.railway.app)
     if (origin.endsWith('.up.railway.app')) {
       console.log(`[CORS] Allowed Railway preview: ${origin}`);
       callback(null, true);
       return;
     }
 
-    // บล็อก origins อื่นๆ
     console.warn(`[CORS] Blocked origin: ${origin}`);
     callback(new Error('Not allowed by CORS'));
   },
@@ -104,17 +98,10 @@ const upload = multer({
   },
 });
 
-const checkFileError = (req: Request, res: Response, next: NextFunction) => {
-  if (req.body.fileError) {
-    res.status(400).json({ message: req.body.fileError });
-    return;
-  }
-  next();
-};
-
 // Logging middleware
 app.use((req: Request, res: Response, next: NextFunction) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
+  console.log('Request body:', req.body); // 🔍 Debug log
   next();
 });
 
@@ -145,16 +132,17 @@ app.get('/', (req: Request, res: Response) => {
   });
 });
 
-// Routes
+// ✅ Routes - ไม่ต้องใส่ /api ซ้ำเพราะมี indexRoutes แล้ว
 app.use('/api', indexRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/cars', carRoutes);
-app.use('/api/contacts', upload.single('file'), checkFileError, contactRoutes);
+app.use('/api/contacts', contactRoutes); // ✅ ไม่มี multer middleware
 app.use('/api/users', userRoutes);
 app.use('/api/reports', reportRoutes);
 
 // 404 handler
 app.use((req: Request, res: Response) => {
+  console.log(`[404] Path not found: ${req.path}`); // 🔍 Debug log
   res.status(404).json({ 
     error: 'Not Found',
     message: `Cannot ${req.method} ${req.path}`,

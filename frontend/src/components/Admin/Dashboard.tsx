@@ -34,6 +34,7 @@ const getHeaders = (): HeadersInit => {
 };
 
 const Dashboard: React.FC = () => {
+  // ✅ Initialize as empty/zero values
   const [stats, setStats] = useState<DashboardStats>({
     totalUsers: 0,
     totalCars: 0,
@@ -53,10 +54,12 @@ const Dashboard: React.FC = () => {
       try {
         const token = getAuthToken();
         if (!token) {
+          console.log('No token found, redirecting to login...');
           navigate('/admin/login');
           return;
         }
 
+        console.log('Fetching dashboard data...');
         const response = await fetch(`${API_URL}/auth/dashboard`, {
           method: 'GET',
           headers: getHeaders(),
@@ -64,27 +67,53 @@ const Dashboard: React.FC = () => {
           credentials: 'include',
         });
 
+        console.log('Dashboard response status:', response.status);
+
         if (!response.ok) {
-          throw new Error('Failed to fetch dashboard data');
+          if (response.status === 401) {
+            console.log('Unauthorized, redirecting to login...');
+            navigate('/admin/login');
+            return;
+          }
+          throw new Error(`Server responded with ${response.status}`);
         }
 
         const data = await response.json();
+        console.log('Dashboard data received:', data);
         
-        // Format the data
+        // ✅ Safely format the data with fallbacks
         setStats({
-          totalUsers: data.totalUsers || 0,
-          totalCars: data.totalCars || 0,
-          totalBookings: data.totalBookings || 0,
-          pendingContacts: data.pendingContacts || 0,
-          recentActivities: (data.recentActivities || []).map((activity: any) => ({
-            id: activity.id,
-            message: activity.message || activity.action,
-            timestamp: new Date(activity.timestamp || activity.created_at).toLocaleString('th-TH'),
-          })),
+          totalUsers: Number(data.totalUsers) || 0,
+          totalCars: Number(data.totalCars) || 0,
+          totalBookings: Number(data.totalBookings) || 0,
+          pendingContacts: Number(data.pendingContacts) || 0,
+          recentActivities: Array.isArray(data.recentActivities) 
+            ? data.recentActivities.map((activity: any) => ({
+                id: activity.id || 0,
+                message: activity.message || activity.action || 'No message',
+                timestamp: activity.timestamp 
+                  ? new Date(activity.timestamp).toLocaleString('th-TH')
+                  : activity.created_at
+                  ? new Date(activity.created_at).toLocaleString('th-TH')
+                  : 'No date',
+              }))
+            : [],
         });
+
+        console.log('Stats updated successfully');
       } catch (error: any) {
         console.error('Error fetching dashboard stats:', error);
-        setError(error.message || 'ไม่สามารถโหลดข้อมูลได้');
+        const errorMessage = error.message || 'ไม่สามารถโหลดข้อมูลได้';
+        setError(errorMessage);
+        
+        // ✅ Keep default empty state on error instead of showing nothing
+        setStats({
+          totalUsers: 0,
+          totalCars: 0,
+          totalBookings: 0,
+          pendingContacts: 0,
+          recentActivities: [],
+        });
         
         if (error.message.includes('401') || error.message.includes('Unauthorized')) {
           navigate('/admin/login');
@@ -211,7 +240,7 @@ const Dashboard: React.FC = () => {
             </button>
           </div>
 
-          {stats.recentActivities.length > 0 ? (
+          {stats.recentActivities && stats.recentActivities.length > 0 ? (
             <div className="space-y-3">
               {stats.recentActivities.slice(0, 5).map((activity) => (
                 <div

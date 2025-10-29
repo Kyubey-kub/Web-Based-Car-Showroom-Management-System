@@ -45,10 +45,12 @@ const Contacts: React.FC = () => {
 
       const token = getAuthToken();
       if (!token) {
+        console.log('❌ No token, redirecting to login...');
         navigate('/admin/login');
         return;
       }
 
+      console.log('🔄 Fetching contacts...');
       const response = await fetch(`${API_URL}/contacts`, {
         method: 'GET',
         headers: getHeaders(),
@@ -56,21 +58,78 @@ const Contacts: React.FC = () => {
         credentials: 'include',
       });
 
+      console.log('📡 Response status:', response.status);
+
       if (!response.ok) {
         throw new Error('Failed to fetch contacts');
       }
 
       const data = await response.json();
-      setContacts(data);
+      console.log('📦 Raw contacts response:', data);
+      console.log('📦 Response type:', typeof data);
+      console.log('📦 Is Array?', Array.isArray(data));
+
+      // ✅ Handle multiple response formats
+      let contactsArray: Contact[] = [];
+
+      if (Array.isArray(data)) {
+        // Format 1: Direct array
+        contactsArray = data;
+        console.log('✅ Response is direct array');
+      } else if (data && typeof data === 'object') {
+        // Format 2: Check all possible properties
+        if (Array.isArray(data.contacts)) {
+          contactsArray = data.contacts;
+          console.log('✅ Response has contacts property (array)');
+        } else if (Array.isArray(data.data)) {
+          contactsArray = data.data;
+          console.log('✅ Response has data property (array)');
+        } else if (Array.isArray(data.results)) {
+          contactsArray = data.results;
+          console.log('✅ Response has results property (array)');
+        } else {
+          // Try to find any array property
+          const arrayProp = Object.keys(data).find(key => Array.isArray(data[key]));
+          if (arrayProp) {
+            contactsArray = data[arrayProp];
+            console.log(`✅ Found array in property: ${arrayProp}`);
+          } else {
+            console.warn('⚠️ Unknown response format:', data);
+            console.warn('⚠️ Available keys:', Object.keys(data));
+            contactsArray = [];
+          }
+        }
+      } else {
+        console.warn('⚠️ Unexpected response type:', typeof data);
+        contactsArray = [];
+      }
+
+      // Validate that contactsArray is actually an array
+      if (!Array.isArray(contactsArray)) {
+        console.error('❌ contactsArray is not an array after processing!');
+        console.error('❌ Final value:', contactsArray);
+        contactsArray = [];
+      }
+
+      console.log(`✅ Setting ${contactsArray.length} contacts to state`);
+      setContacts(contactsArray);
+
     } catch (err: any) {
-      console.error('Error fetching contacts:', err);
+      console.error('❌ Error fetching contacts:', err);
+      console.error('❌ Error details:', {
+        message: err.message,
+        stack: err.stack
+      });
       setError(err.message || 'ไม่สามารถโหลดข้อมูลได้');
+      setContacts([]); // Always set empty array on error
       
       if (err.message.includes('401') || err.message.includes('Unauthorized')) {
+        console.log('❌ Unauthorized, redirecting to login...');
         navigate('/admin/login');
       }
     } finally {
       setLoading(false);
+      console.log('✅ Fetch contacts completed');
     }
   };
 
@@ -86,6 +145,8 @@ const Contacts: React.FC = () => {
 
     try {
       setSubmitting(true);
+      console.log(`🔄 Sending reply to contact ${contactId}...`);
+      
       const response = await fetch(`${API_URL}/contacts/${contactId}/reply`, {
         method: 'POST',
         headers: getHeaders(),
@@ -98,12 +159,13 @@ const Contacts: React.FC = () => {
         throw new Error('Failed to send reply');
       }
 
+      console.log('✅ Reply sent successfully');
       alert('ส่งการตอบกลับสำเร็จ');
       setSelectedContact(null);
       setReplyText('');
       fetchContacts(); // Refresh the list
     } catch (err: any) {
-      console.error('Error sending reply:', err);
+      console.error('❌ Error sending reply:', err);
       alert('เกิดข้อผิดพลาดในการส่งการตอบกลับ');
     } finally {
       setSubmitting(false);
@@ -116,6 +178,8 @@ const Contacts: React.FC = () => {
     }
 
     try {
+      console.log(`🔄 Deleting contact ${contactId}...`);
+      
       const response = await fetch(`${API_URL}/contacts/${contactId}`, {
         method: 'DELETE',
         headers: getHeaders(),
@@ -127,10 +191,11 @@ const Contacts: React.FC = () => {
         throw new Error('Failed to delete contact');
       }
 
+      console.log('✅ Contact deleted successfully');
       alert('ลบข้อความสำเร็จ');
       fetchContacts(); // Refresh the list
     } catch (err: any) {
-      console.error('Error deleting contact:', err);
+      console.error('❌ Error deleting contact:', err);
       alert('เกิดข้อผิดพลาดในการลบข้อความ');
     }
   };
@@ -159,11 +224,11 @@ const Contacts: React.FC = () => {
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
-            กลับไปหน้าแดshboard
+            กลับไปหน้าแดชบอร์ด
           </button>
         </div>
         <p className="text-center text-lg opacity-80 mb-10">
-          รายการข้อความจากผู้ใช้
+          รายการข้อความจากผู้ใช้ ({contacts.length} รายการ)
         </p>
 
         {loading ? (

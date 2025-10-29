@@ -1,16 +1,6 @@
 import React, { useState } from 'react';
-import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-
-// API URL Configuration - ต้องมี /api ในตัว
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-
-const apiClient = axios.create({
-  baseURL: API_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
+import { sendContact } from '../../api/auth'; // ✅ ใช้ฟังก์ชันจาก auth.ts
 
 const ContactUs: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -38,23 +28,43 @@ const ContactUs: React.FC = () => {
     try {
       const token = localStorage.getItem('token');
       if (!token) {
-        throw new Error('กรุณาล็อกอินก่อนส่งข้อความ');
+        setError('กรุณาล็อกอินก่อนส่งข้อความ');
+        setLoading(false);
+        return;
       }
 
-      // ✅ เปลี่ยนจาก '/api/contacts' เป็น '/contacts' เพราะ baseURL มี /api อยู่แล้ว
-      await apiClient.post(
-        '/contacts',
-        formData,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+      // ✅ ตรวจสอบว่าข้อมูลครบถ้วน
+      if (!formData.name.trim() || !formData.email.trim() || 
+          !formData.subject.trim() || !formData.message.trim()) {
+        setError('กรุณากรอกข้อมูลให้ครบถ้วน');
+        setLoading(false);
+        return;
+      }
+
+      console.log('Sending contact message...');
+      console.log('Form data:', formData);
+
+      // ✅ เรียกใช้ sendContact จาก auth.ts (จัดการ URL ให้อัตโนมัติ)
+      const response = await sendContact(
+        formData.name.trim(),
+        formData.email.trim(),
+        formData.subject.trim(),
+        formData.message.trim()
       );
+
+      console.log('Success response:', response);
 
       setSuccess('ส่งข้อความสำเร็จ! ทีมงานจะติดต่อกลับเร็วๆ นี้');
       setFormData({ name: '', email: '', subject: '', message: '' });
+      
+      setTimeout(() => {
+        navigate('/client/home');
+      }, 2000);
     } catch (err: any) {
       console.error('Error sending message:', err);
-      setError(err.response?.data?.error || 'เกิดข้อผิดพลาดในการส่งข้อความ');
+      
+      const errorMessage = err.message || 'เกิดข้อผิดพลาดในการส่งข้อความ กรุณาลองใหม่อีกครั้ง';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -141,14 +151,23 @@ const ContactUs: React.FC = () => {
             />
           </div>
 
-          {error && <p className="text-red-400 text-center">{error}</p>}
-          {success && <p className="text-green-400 text-center">{success}</p>}
+          {error && (
+            <div className="bg-red-500/10 border border-red-500/50 rounded-lg p-4">
+              <p className="text-red-400 text-center text-sm">{error}</p>
+            </div>
+          )}
+          
+          {success && (
+            <div className="bg-green-500/10 border border-green-500/50 rounded-lg p-4">
+              <p className="text-green-400 text-center text-sm">{success}</p>
+            </div>
+          )}
 
           <div className="flex justify-center gap-4">
             <button
               type="submit"
               disabled={loading}
-              className="px-6 py-2 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-lg text-white font-medium hover:from-indigo-600 hover:to-purple-600 transition-all disabled:opacity-50"
+              className="px-6 py-2 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-lg text-white font-medium hover:from-indigo-600 hover:to-purple-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'กำลังส่ง...' : 'ส่งข้อความ'}
             </button>

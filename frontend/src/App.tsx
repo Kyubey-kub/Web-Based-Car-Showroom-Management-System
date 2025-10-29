@@ -5,7 +5,8 @@ import AuthFormAdmin from './components/AuthFormAdmin';
 import HomeClient from './components/Client/Home';
 import HomeAdmin from './components/Admin/Home';
 import ActivityDetails from './components/Admin/ActivityDetails';
-import Contacts from './components/Admin/Contacts'; // เพิ่มการนำเข้า
+import Contacts from './components/Admin/Contacts';
+import EditUser from './components/Admin/EditUser'; // 👈 เพิ่มบรรทัดนี้
 import OurCars from './components/Client/OurCars';
 import CarList from './components/Client/CarList';
 import Reviews from './components/Client/Reviews';
@@ -112,6 +113,12 @@ const AppRoutes: React.FC = () => {
           <Route
             path="/admin/contacts"
             element={<ProtectedRoute element={<Contacts />} allowedRole="admin" />}
+          />
+
+          {/* 👇 เพิ่มเส้นทางสำหรับ Edit User (Admin) */}
+          <Route
+            path="/admin/users/edit/:userId"
+            element={<ProtectedRoute element={<EditUser />} allowedRole="admin" />}
           />
 
           {/* เส้นทางสำหรับ Our Cars */}

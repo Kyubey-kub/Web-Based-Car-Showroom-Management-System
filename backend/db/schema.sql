@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Oct 21, 2025 at 06:49 AM (Updated)
+-- Generation Time: Oct 29, 2025 at 06:30 AM (Updated)
 -- Server version: 8.4.3
 -- PHP Version: 8.3.16
 
@@ -105,68 +105,7 @@ CREATE TABLE login_logs (
 INSERT INTO login_logs (id, user_id, role, login_at) VALUES
 (1, 2, 'client', '2025-04-10 03:00:00'),
 (2, 2, 'client', '2025-04-09 05:00:00'),
-(3, 2, 'client', '2025-04-08 07:00:00'),
-(4, 15, 'admin', '2025-04-14 07:40:36'),
-(5, 15, 'admin', '2025-04-14 07:40:41'),
-(6, 15, 'admin', '2025-04-14 07:40:42'),
-(7, 15, 'admin', '2025-04-14 07:40:43'),
-(8, 15, 'admin', '2025-04-14 07:40:43'),
-(9, 15, 'admin', '2025-04-14 07:40:43'),
-(10, 15, 'admin', '2025-04-14 07:40:44'),
-(11, 15, 'admin', '2025-04-14 07:40:44'),
-(12, 15, 'admin', '2025-04-14 07:40:44'),
-(13, 15, 'admin', '2025-04-14 07:40:44'),
-(14, 15, 'admin', '2025-04-14 07:40:44'),
-(15, 15, 'admin', '2025-04-14 07:46:13'),
-(16, 15, 'admin', '2025-04-14 07:46:14'),
-(17, 15, 'admin', '2025-04-14 07:46:14'),
-(18, 15, 'admin', '2025-04-14 07:46:14'),
-(19, 15, 'admin', '2025-04-14 07:46:14'),
-(20, 15, 'admin', '2025-04-14 07:46:15'),
-(21, 15, 'admin', '2025-04-14 09:06:44'),
-(22, 15, 'admin', '2025-04-15 05:10:23'),
-(23, 3, 'client', '2025-04-15 06:14:39'),
-(24, 15, 'admin', '2025-04-15 06:24:18'),
-(25, 3, 'client', '2025-04-15 06:32:23'),
-(26, 15, 'admin', '2025-04-15 06:32:47'),
-(27, 15, 'admin', '2025-04-15 06:37:35'),
-(28, 3, 'client', '2025-04-15 06:37:54'),
-(29, 15, 'admin', '2025-04-15 06:39:10'),
-(30, 3, 'client', '2025-04-15 06:49:43'),
-(31, 15, 'admin', '2025-04-15 06:51:36'),
-(32, 15, 'admin', '2025-04-15 06:54:33'),
-(33, 3, 'client', '2025-04-15 06:58:04'),
-(34, 15, 'admin', '2025-04-15 06:58:25'),
-(35, 3, 'client', '2025-04-15 07:11:22'),
-(36, 15, 'admin', '2025-04-15 07:11:42'),
-(37, 15, 'admin', '2025-04-15 07:18:56'),
-(38, 15, 'admin', '2025-04-15 07:21:20'),
-(39, 15, 'admin', '2025-04-15 07:22:31'),
-(40, 3, 'client', '2025-04-15 07:23:22'),
-(41, 3, 'client', '2025-04-15 07:29:36'),
-(42, 15, 'admin', '2025-04-15 07:32:38'),
-(43, 3, 'client', '2025-04-15 07:36:15'),
-(44, 3, 'client', '2025-04-15 07:53:41'),
-(45, 3, 'client', '2025-04-15 07:55:42'),
-(46, 15, 'admin', '2025-04-15 07:56:50'),
-(47, 3, 'client', '2025-04-16 08:22:16'),
-(48, 15, 'admin', '2025-04-16 08:23:23'),
-(49, 3, 'client', '2025-04-16 08:23:57'),
-(50, 3, 'client', '2025-04-16 08:24:08'),
-(51, 3, 'client', '2025-04-16 09:39:03'),
-(52, 3, 'client', '2025-04-18 05:27:25'),
-(53, 3, 'client', '2025-04-18 05:52:34'),
-(54, 3, 'client', '2025-04-18 05:58:28'),
-(55, 15, 'admin', '2025-04-18 05:59:28'),
-(56, 3, 'client', '2025-04-18 05:59:57'),
-(57, 3, 'client', '2025-04-18 07:17:12'),
-(58, 15, 'admin', '2025-04-18 07:17:45'),
-(59, 3, 'client', '2025-04-18 07:18:27'),
-(60, 3, 'client', '2025-04-20 06:07:18'),
-(61, 3, 'client', '2025-04-20 07:16:04'),
-(62, 3, 'client', '2025-04-20 08:18:34'),
-(63, 3, 'client', '2025-04-20 09:33:40'),
-(64, 3, 'client', '2025-04-21 05:50:03');
+(3, 2, 'client', '2025-04-08 07:00:00');
 
 -- ตาราง cars
 CREATE TABLE cars (
@@ -194,22 +133,29 @@ INSERT INTO cars (id, model_id, year, price, description, image_url, model_3d_ur
 (3, 3, 2021, 1500000.00, 'Rugged pickup truck for all terrains', 'https://cdn.motor1.com/images/mgl/GPYrG/s1/2019-ford-ranger-raptor-im-test.jpg', 'path/to/3dmodel3.glb', 'Blue', 10000, 'diesel', 'available', '2025-03-31 05:29:17'),
 (4, 4, 2023, 2800000.00, 'Luxury sedan with cutting-edge technology', 'https://images.pexels.com/photos/170811/pexels-photo-170811.jpeg?auto=compress&cs=tinysrgb&w=500', 'path/to/3dmodel4.glb', 'White', 0, 'hybrid', 'available', '2025-03-31 05:29:17');
 
--- ตาราง contacts
+-- ✅ ตาราง contacts (แก้ไขแล้ว - เพิ่ม user_id, subject, reply)
 CREATE TABLE contacts (
     id INT NOT NULL AUTO_INCREMENT,
+    user_id INT DEFAULT NULL,
     name VARCHAR(255) NOT NULL,
     email VARCHAR(255) NOT NULL,
+    subject VARCHAR(255) NOT NULL,
     message TEXT NOT NULL,
     file_name VARCHAR(255) DEFAULT NULL,
-    status ENUM('pending', 'replied') DEFAULT 'pending',
-    created_at DATETIME NOT NULL,
-    PRIMARY KEY (id)
+    status ENUM('pending', 'replied', 'closed') DEFAULT 'pending',
+    reply TEXT DEFAULT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    KEY idx_user_id (user_id),
+    KEY idx_status (status),
+    KEY idx_created_at (created_at),
+    CONSTRAINT fk_contacts_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- เพิ่มข้อมูลตัวอย่างในตาราง contacts
-INSERT INTO contacts (id, name, email, message, file_name, status, created_at) VALUES
-(1, 'John Doe', 'john.doe@example.com', 'I have a question about the AMG C 63.', NULL, 'pending', '2025-04-25 06:00:00'),
-(2, 'Jane Smith', 'jane.smith@example.com', 'Please contact me regarding the Giulia.', 'attachment.pdf', 'pending', '2025-04-25 06:10:00');
+INSERT INTO contacts (id, user_id, name, email, subject, message, file_name, status, reply, created_at) VALUES
+(1, 2, 'John Doe', 'john.doe@example.com', 'Question about AMG C 63', 'I have a question about the AMG C 63.', NULL, 'pending', NULL, '2025-04-25 06:00:00'),
+(2, 2, 'Jane Smith', 'jane.smith@example.com', 'Inquiry about Giulia', 'Please contact me regarding the Giulia.', 'attachment.pdf', 'replied', 'Thank you for your inquiry. We will contact you soon.', '2025-04-25 06:10:00');
 
 -- ตาราง bookings
 CREATE TABLE bookings (
