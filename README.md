@@ -603,9 +603,11 @@ in the Software without restriction...
 
 **Kyubey-kub**
 
-- GitHub: [@Kyubey-kub](https://github.com/Kyubey-kub)
-- Email: your.email@example.com
-- Portfolio: [Your Portfolio URL]
+- [![GitHub](https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white)](https://github.com/Kyubey-kub)
+- [![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/somprasong-wasuwid-271b64350/)
+- [![Portfolio](https://img.shields.io/badge/Portfolio-FF5722?style=for-the-badge&logo=todoist&logoColor=white)](https://imaginative-dusk-9f95ff.netlify.app/#home)
+- [![Email](https://img.shields.io/badge/Email-D14836?style=for-the-badge&logo=gmail&logoColor=white)](mailto:somprasongwasuwid@gmail.com)
+
 
 ---
 
