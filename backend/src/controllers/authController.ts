@@ -1,8 +1,9 @@
+// src/controllers/authController.ts
 import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import db from '../config/db';
-import { User, AuthenticatedRequest, ChartRow } from '../types';
+import { User, AuthenticatedRequest } from '../types';
 
 const JWT_SECRET = process.env.JWT_SECRET!;
 if (!JWT_SECRET) throw new Error('JWT_SECRET is required');
@@ -95,6 +96,11 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     res.status(500).json({ error: 'Failed to login' });
   }
 };
+
+interface ChartRow {
+  date: string;
+  count: string | number;
+}
 
 export const getDashboardData = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   if (!req.user) {
