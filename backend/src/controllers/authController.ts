@@ -145,4 +145,4 @@ export const getRecentActivity = async (req: AuthenticatedRequest, res: Response
     console.error('Recent activity error:', error);
     res.status(500).json({ error: 'Failed to fetch recent activity' });
   }
-};
+}; 
