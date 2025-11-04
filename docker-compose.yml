@@ -1,0 +1,83 @@
+version: '3.8'
+
+services:
+  # MySQL Database
+  db:
+    image: mysql:8.0
+    container_name: carrental_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./backend/db/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # phpMyAdmin
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: carrental_phpmyadmin
+    restart: always
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+    ports:
+      - "8080:80"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - app-network
+
+  # Backend API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: carrental_backend
+    restart: always
+    environment:
+      NODE_ENV: production
+      PORT: 5000
+      DB_HOST: db
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+      DB_PORT: 3306
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: 7d
+      FRONTEND_URL: ${FRONTEND_URL}
+      EMAIL_USER: ${EMAIL_USER}
+      EMAIL_PASS: ${EMAIL_PASS}
+      EMAIL_ADMIN: ${EMAIL_ADMIN}
+      CORS_ORIGINS: ${CORS_ORIGINS}
+      MAX_FILE_SIZE: 5242880
+      UPLOAD_PATH: ./uploads
+    ports:
+      - "5000:5000"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./uploads:/app/uploads
+    networks:
+      - app-network
+
+volumes:
+  mysql_data:
+
+networks:
+  app-network:
+    driver: bridge

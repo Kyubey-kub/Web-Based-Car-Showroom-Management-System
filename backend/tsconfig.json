@@ -1,23 +1,22 @@
 {
   "compilerOptions": {
     "target": "ES2020",
-    "module": "CommonJS",
+    "module": "commonjs",
+    "lib": ["ES2020"],
     "outDir": "./dist",
     "rootDir": "./src",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
     "moduleResolution": "node",
-    "baseUrl": ".",
-    "paths": {
-      "*": ["src/*"],
-      "types/*": ["src/types/*"],
-      "config/*": ["src/config/*"],
-      "routes/*": ["src/routes/*"],
-      "controllers/*": ["src/controllers/*"],
-      "middleware/*": ["src/middleware/*"]
-    }
+    "allowSyntheticDefaultImports": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "typeRoots": ["./node_modules/@types"],
+    "types": ["node", "express"]
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]
