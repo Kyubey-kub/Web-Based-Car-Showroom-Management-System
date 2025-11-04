@@ -11,8 +11,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node dist/server.js",
     "dev": "nodemon src/server.ts",
-    "build": "tsc",
-    "postinstall": "npm run build"
+    "build": "tsc"
   },
   "keywords": [
     "car-showroom",
@@ -35,20 +34,20 @@
     "nodemailer": "^6.10.1",
     "validator": "^13.12.0",
     "ws": "^8.18.1",
-    "typescript": "^5.8.2"
-  },
-  "devDependencies": {
+    "typescript": "^5.8.2",
     "@types/bcryptjs": "^3.0.0",
     "@types/cors": "^2.8.19",
-    "@types/date-fns": "^2.6.0",
     "@types/express": "^5.0.1",
     "@types/jsonwebtoken": "^9.0.9",
     "@types/multer": "^1.4.12",
     "@types/node": "^22.13.12",
     "@types/nodemailer": "^6.4.17",
     "@types/validator": "^13.12.2",
-    "@types/ws": "^8.18.1",
+    "@types/ws": "^8.18.1"
+  },
+  "devDependencies": {
     "nodemon": "^3.1.9",
-    "ts-node": "^10.9.2"
+    "ts-node": "^10.9.2",
+    "@types/date-fns": "^2.6.0"
   }
 }
