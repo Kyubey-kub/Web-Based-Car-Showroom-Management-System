@@ -1,187 +1,135 @@
-import { Request, Response, NextFunction } from 'express';
+// src/controllers/carController.ts
+
+import { Request, Response } from 'express';
 import db from '../config/db';
-import { Car, User, JwtPayload } from '../types';
-import { RowDataPacket } from 'mysql2';
+import { Car, AuthenticatedRequest } from '../types';
 
-interface CarRow extends RowDataPacket {
-    id: number;
-    model_id: number;
-    year: number;
-    price: number;
-    description: string;
-    image_url: string;
-    model_3d_url: string;
-    status: 'available' | 'sold' | 'reserved';
-    color?: string;
-    mileage?: number;
-    fuel_type?: 'petrol' | 'diesel' | 'electric' | 'hybrid';
-    model_name: string;
-    brand_name: string;
-}
-
-interface AuthenticatedRequest extends Request {
-    user?: User | JwtPayload;
-}
-
-export const getAllCars = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try {
-        const [rows] = await db.query<CarRow[]>(
-            `SELECT cars.*, 
-                   models.name AS model_name, 
-                   brands.name AS brand_name
-            FROM cars
-            JOIN models ON cars.model_id = models.id
-            JOIN brands ON models.brand_id = brands.id
-            WHERE cars.status = 'available'`
-        );
-        res.json(rows);
-    } catch (error: any) {
-        console.error('Error in getAllCars:', error);
-        res.status(500).json({ error: 'Failed to fetch cars' });
-        next(error);
-    }
+export const getAllCars = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { rows } = await db.query(`
+      SELECT c.*, m.name as model_name, b.name as brand_name
+      FROM cars c
+      JOIN models m ON c.model_id = m.id
+      JOIN brands b ON m.brand_id = b.id
+      WHERE c.status = 'available'
+    `);
+    res.json(rows);
+  } catch (error) {
+    console.error('Get cars error:', error);
+    res.status(500).json({ error: 'Failed to fetch cars' });
+  }
 };
 
-export const getCarById = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    const { id } = req.params;
-    try {
-        const [rows] = await db.query<CarRow[]>(
-            `SELECT cars.*, 
-                   models.name AS model_name, 
-                   brands.name AS brand_name
-            FROM cars
-            JOIN models ON cars.model_id = models.id
-            JOIN brands ON models.brand_id = brands.id
-            WHERE cars.id = ?`,
-            [id]
-        );
-        if (rows.length === 0) {
-            res.status(404).json({ error: 'ไม่พบรถ' });
-            return;
-        }
-        res.json(rows[0]);
-    } catch (error: any) {
-        console.error('Error in getCarById:', error);
-        res.status(500).json({ error: 'Failed to fetch car' });
-        next(error);
+export const getCarById = async (req: Request, res: Response): Promise<void> => {
+  const { id } = req.params;
+  try {
+    const { rows } = await db.query(`
+      SELECT c.*, m.name as model_name, b.name as brand_name
+      FROM cars c
+      JOIN models m ON c.model_id = m.id
+      JOIN brands b ON m.brand_id = b.id
+      WHERE c.id = $1
+    `, [id]);
+    if (rows.length === 0) {
+      res.status(404).json({ error: 'ไม่พบรถ' });
+      return;
     }
+    res.json(rows[0]);
+  } catch (error) {
+    console.error('Get car error:', error);
+    res.status(500).json({ error: 'Failed to fetch car' });
+  }
 };
 
-export const createCar = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
-    if (!req.user) {
-        res.status(401).json({ error: 'Unauthorized' });
-        return;
-    }
-    if (req.user.role !== 'admin') {
-        res.status(403).json({ error: 'Access denied. Admins only.' });
-        return;
-    }
+export const createCar = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  if (!req.user || req.user.role !== 'admin') {
+    res.status(403).json({ error: 'Access denied' });
+    return;
+  }
 
-    const car: Car = req.body;
+  const car: Car = req.body;
+  if (!designatedFieldsPresent(car)) {
+    res.status(400).json({ error: 'กรุณาระบุทุกช่องที่จำเป็น' });
+    return;
+  }
 
-    if (!car.modelId || !car.year || !car.price || !car.description || !car.imageUrl || !car.model3dUrl || !car.status) {
-        res.status(400).json({ error: 'กรุณาระบุทุกช่องที่จำเป็น' });
-        return;
-    }
-
-    if (car.price <= 0) {
-        res.status(400).json({ error: 'ราคาต้องเป็นจำนวนบวก' });
-        return;
-    }
-
-    const validStatuses = ['available', 'sold', 'reserved'];
-    if (!validStatuses.includes(car.status)) {
-        res.status(400).json({ error: `สถานะไม่ถูกต้อง ต้องเป็น: ${validStatuses.join(', ')}` });
-        return;
-    }
-
-    try {
-        const [result] = await db.query(
-            'INSERT INTO cars (model_id, year, price, description, image_url, model_3d_url, status, color, mileage, fuel_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-            [car.modelId, car.year, car.price, car.description, car.imageUrl, car.model3dUrl, car.status, car.color || null, car.mileage || 0, car.fuelType || 'petrol']
-        );
-        const newCar = { ...car, id: (result as any).insertId };
-        res.status(201).json(newCar);
-    } catch (error: any) {
-        console.error('Error in createCar:', error);
-        res.status(500).json({ error: 'Failed to create car' });
-        next(error);
-    }
+  try {
+    const { rows } = await db.query(
+      'INSERT INTO cars (model_id, year, price, description, image_url, model_3d_url, status, color, mileage, fuel_type) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id',
+      [car.modelId, car.year, car.price, car.description, car.imageUrl, car.model3dUrl, car.status, car.color || null, car.mileage || 0, car.fuelType || 'petrol']
+    );
+    res.status(201).json({ ...car, id: rows[0].id });
+  } catch (error) {
+    console.error('Create car error:', error);
+    res.status(500).json({ error: 'Failed to create car' });
+  }
 };
 
-export const updateCar = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
-    if (!req.user) {
-        res.status(401).json({ error: 'Unauthorized' });
-        return;
-    }
-    if (req.user.role !== 'admin') {
-        res.status(403).json({ error: 'Access denied. Admins only.' });
-        return;
+export const updateCar = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  if (!req.user || req.user.role !== 'admin') {
+    res.status(403).json({ error: 'Access denied' });
+    return;
+  }
+
+  const { id } = req.params;
+  const car: Partial<Car> = req.body;
+
+  if (!designatedFieldsPresent(car as Car)) {
+    res.status(400).json({ error: 'กรุณาระบุทุกช่องที่จำเป็น' });
+    return;
+  }
+
+  try {
+    const fields = [
+      car.modelId, car.year, car.price, car.description,
+      car.imageUrl, car.model3dUrl, car.status,
+      car.color || null, car.mileage || 0, car.fuelType || 'petrol', id
+    ];
+
+    const { rows } = await db.query(
+      `UPDATE cars SET 
+         model_id = $1, year = $2, price = $3, description = $4,
+         image_url = $5, model_3d_url = $6, status = $7,
+         color = $8, mileage = $9, fuel_type = $10, updated_at = NOW()
+       WHERE id = $11
+       RETURNING *`,
+      fields
+    );
+
+    if (rows.length === 0) {
+      res.status(404).json({ error: 'ไม่พบรถ' });
+      return;
     }
 
-    const { id } = req.params;
-    const car: Car = req.body;
-
-    if (!car.modelId || !car.year || !car.price || !car.description || !car.imageUrl || !car.model3dUrl || !car.status) {
-        res.status(400).json({ error: 'กรุณาระบุทุกช่องที่จำเป็น' });
-        return;
-    }
-
-    if (car.price <= 0) {
-        res.status(400).json({ error: 'ราคาต้องเป็นจำนวนบวก' });
-        return;
-    }
-
-    const validStatuses = ['available', 'sold', 'reserved'];
-    if (!validStatuses.includes(car.status)) {
-        res.status(400).json({ error: `สถานะไม่ถูกต้อง ต้องเป็น: ${validStatuses.join(', ')}` });
-        return;
-    }
-
-    try {
-        const [existingCars] = await db.query<RowDataPacket[]>('SELECT * FROM cars WHERE id = ?', [id]);
-        if (existingCars.length === 0) {
-            res.status(404).json({ error: 'ไม่พบรถ' });
-            return;
-        }
-
-        await db.query(
-            'UPDATE cars SET model_id = ?, year = ?, price = ?, description = ?, image_url = ?, model_3d_url = ?, status = ?, color = ?, mileage = ?, fuel_type = ? WHERE id = ?',
-            [car.modelId, car.year, car.price, car.description, car.imageUrl, car.model3dUrl, car.status, car.color || null, car.mileage || 0, car.fuelType || 'petrol', id]
-        );
-        const updatedCar = { ...car, id: Number(id) };
-        res.json(updatedCar);
-    } catch (error: any) {
-        console.error('Error in updateCar:', error);
-        res.status(500).json({ error: 'Failed to update car' });
-        next(error);
-    }
+    res.json(rows[0]);
+  } catch (error) {
+    console.error('Update car error:', error);
+    res.status(500).json({ error: 'Failed to update car' });
+  }
 };
 
-export const deleteCar = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
-    if (!req.user) {
-        res.status(401).json({ error: 'Unauthorized' });
-        return;
-    }
-    if (req.user.role !== 'admin') {
-        res.status(403).json({ error: 'Access denied. Admins only.' });
-        return;
+export const deleteCar = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  if (!req.user || req.user.role !== 'admin') {
+    res.status(403).json({ error: 'Access denied' });
+    return;
+  }
+
+  const { id } = req.params;
+
+  try {
+    const { rowCount } = await db.query('DELETE FROM cars WHERE id = $1', [id]);
+    if (rowCount === 0) {
+      res.status(404).json({ error: 'ไม่พบรถ' });
+      return;
     }
 
-    const { id } = req.params;
-    try {
-        const [existingCars] = await db.query<RowDataPacket[]>('SELECT * FROM cars WHERE id = ?', [id]);
-        if (existingCars.length === 0) {
-            res.status(404).json({ error: 'ไม่พบรถ' });
-            return;
-        }
+    res.json({ message: 'ลบรถสำเร็จ' });
+  } catch (error) {
+    console.error('Delete car error:', error);
+    res.status(500).json({ error: 'Failed to delete car' });
+  }
+};
 
-        await db.query('DELETE FROM bookings WHERE car_id = ?', [id]);
-        await db.query('DELETE FROM cars WHERE id = ?', [id]);
-        res.status(204).send();
-    } catch (error: any) {
-        console.error('Error in deleteCar:', error);
-        res.status(500).json({ error: 'Failed to delete car' });
-        next(error);
-    }
+const designatedFieldsPresent = (car: Car): boolean => {
+  return !!(car.modelId && car.year && car.price && car.description && car.imageUrl && car.model3dUrl && car.status);
 };

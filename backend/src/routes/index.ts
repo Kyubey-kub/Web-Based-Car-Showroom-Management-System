@@ -1,11 +1,17 @@
-import { Router, Request, Response, RequestHandler } from 'express';
+// src/routes/index.ts
+
+import { Router, Request, Response } from 'express';
 import db from '../config/db';
 import { authMiddleware, adminMiddleware } from '../middleware/auth';
-import { RowDataPacket } from 'mysql2';
 import { format, isValid, parseISO } from 'date-fns';
-import { register, login } from '../controllers/authController'; // ลบ getDashboardData, getRecentActivity (ย้ายไป authRoutes)
+import { register, login } from '../controllers/authController';
 import { getCarById } from '../controllers/carController';
-import { sendContact, getContacts, replyContact, deleteContact } from '../controllers/contactController';
+import { 
+  createContact, 
+  getAllContacts, 
+  updateContactStatus, 
+  deleteContact 
+} from '../controllers/contactController';
 import { getUserActivity, getRegistrationTrends } from '../controllers/reportController';
 import { AuthenticatedRequest } from '../types';
 
@@ -16,7 +22,7 @@ const router = Router();
 // Get all cars with brand and model information
 router.get('/cars', async (req: Request, res: Response): Promise<void> => {
   try {
-    const [cars] = await db.query<RowDataPacket[]>(
+    const { rows: cars } = await db.query(
       `SELECT cars.*, models.name AS model_name, brands.name AS brand_name 
        FROM cars 
        LEFT JOIN models ON cars.model_id = models.id 
@@ -35,8 +41,8 @@ router.get('/cars', async (req: Request, res: Response): Promise<void> => {
 // Get all brands
 router.get('/brands', async (req: Request, res: Response): Promise<void> => {
   try {
-    const [brands] = await db.query<RowDataPacket[]>('SELECT name FROM brands');
-    res.status(200).json(brands.map((brand: any) => brand.name));
+    const { rows: brands } = await db.query('SELECT name FROM brands');
+    res.status(200).json(brands.map((b: any) => b.name));
   } catch (error) {
     console.error('[GET /brands] Error:', error);
     res.status(500).json({ 
@@ -49,8 +55,8 @@ router.get('/brands', async (req: Request, res: Response): Promise<void> => {
 // Get all years
 router.get('/years', async (req: Request, res: Response): Promise<void> => {
   try {
-    const [years] = await db.query<RowDataPacket[]>('SELECT DISTINCT year FROM cars ORDER BY year DESC');
-    res.status(200).json(years.map((year: any) => year.year.toString()));
+    const { rows: years } = await db.query('SELECT DISTINCT year FROM cars ORDER BY year DESC');
+    res.status(200).json(years.map((y: any) => y.year.toString()));
   } catch (error) {
     console.error('[GET /years] Error:', error);
     res.status(500).json({ 
@@ -66,7 +72,7 @@ router.get('/cars/:id', getCarById);
 // Get all reviews
 router.get('/reviews', async (req: Request, res: Response): Promise<void> => {
   try {
-    const [reviews] = await db.query<RowDataPacket[]>(
+    const { rows: reviews } = await db.query(
       `SELECT reviews.*, users.email AS user_email, 
               cars.year, models.name AS model_name, brands.name AS brand_name 
        FROM reviews 
@@ -86,15 +92,14 @@ router.get('/reviews', async (req: Request, res: Response): Promise<void> => {
   }
 });
 
-// ==================== AUTH ROUTES (PUBLIC - ย้าย login/register มาที่นี่ถ้าต้องการ public) ====================
-router.post('/auth/register', register as RequestHandler);
-router.post('/auth/login', login as RequestHandler);
-// ลบ duplicate: router.get('/auth/dashboard', ...); router.get('/auth/recent-activity', ...);
+// ==================== AUTH ROUTES (PUBLIC) ====================
+router.post('/auth/register', register);
+router.post('/auth/login', login);
 
 // ==================== AUTHENTICATED ROUTES ====================
 
 // Create a review
-router.post('/reviews', authMiddleware, async (req, res): Promise<void> => {
+router.post('/reviews', authMiddleware, async (req: Request, res: Response): Promise<void> => {
   const authenticatedReq = req as AuthenticatedRequest;
   
   if (!authenticatedReq.user) {
@@ -116,19 +121,19 @@ router.post('/reviews', authMiddleware, async (req, res): Promise<void> => {
   }
 
   try {
-    const [cars] = await db.query<RowDataPacket[]>('SELECT * FROM cars WHERE id = ?', [car_id]);
+    const { rows: cars } = await db.query('SELECT * FROM cars WHERE id = $1', [car_id]);
     if (cars.length === 0) {
       res.status(404).json({ error: 'Car not found' });
       return;
     }
 
-    const [result] = await db.query(
-      'INSERT INTO reviews (user_id, car_id, rating, comment, created_at) VALUES (?, ?, ?, ?, NOW())',
+    const { rows } = await db.query(
+      'INSERT INTO reviews (user_id, car_id, rating, comment, created_at) VALUES ($1, $2, $3, $4, NOW()) RETURNING id',
       [user_id, car_id, rating, comment]
     );
     
     res.status(201).json({ 
-      id: (result as any).insertId, 
+      id: rows[0].id, 
       user_id, 
       car_id, 
       rating, 
@@ -145,7 +150,7 @@ router.post('/reviews', authMiddleware, async (req, res): Promise<void> => {
 });
 
 // Update a review
-router.put('/reviews/:id', authMiddleware, async (req, res): Promise<void> => {
+router.put('/reviews/:id', authMiddleware, async (req: Request, res: Response): Promise<void> => {
   const authenticatedReq = req as AuthenticatedRequest;
   
   if (!authenticatedReq.user) {
@@ -169,7 +174,7 @@ router.put('/reviews/:id', authMiddleware, async (req, res): Promise<void> => {
   }
 
   try {
-    const [reviews] = await db.query<RowDataPacket[]>('SELECT * FROM reviews WHERE id = ?', [reviewId]);
+    const { rows: reviews } = await db.query('SELECT * FROM reviews WHERE id = $1', [reviewId]);
     if (reviews.length === 0) {
       res.status(404).json({ error: 'Review not found' });
       return;
@@ -182,7 +187,7 @@ router.put('/reviews/:id', authMiddleware, async (req, res): Promise<void> => {
     }
 
     await db.query(
-      'UPDATE reviews SET rating = ?, comment = ? WHERE id = ?',
+      'UPDATE reviews SET rating = $1, comment = $2 WHERE id = $3',
       [rating, comment, reviewId]
     );
     
@@ -197,7 +202,7 @@ router.put('/reviews/:id', authMiddleware, async (req, res): Promise<void> => {
 });
 
 // Delete a review
-router.delete('/reviews/:id', authMiddleware, async (req, res): Promise<void> => {
+router.delete('/reviews/:id', authMiddleware, async (req: Request, res: Response): Promise<void> => {
   const authenticatedReq = req as AuthenticatedRequest;
   
   if (!authenticatedReq.user) {
@@ -210,7 +215,7 @@ router.delete('/reviews/:id', authMiddleware, async (req, res): Promise<void> =>
   const user_role = authenticatedReq.user.role;
 
   try {
-    const [reviews] = await db.query<RowDataPacket[]>('SELECT * FROM reviews WHERE id = ?', [reviewId]);
+    const { rows: reviews } = await db.query('SELECT * FROM reviews WHERE id = $1', [reviewId]);
     if (reviews.length === 0) {
       res.status(404).json({ error: 'Review not found' });
       return;
@@ -222,7 +227,7 @@ router.delete('/reviews/:id', authMiddleware, async (req, res): Promise<void> =>
       return;
     }
 
-    await db.query('DELETE FROM reviews WHERE id = ?', [reviewId]);
+    await db.query('DELETE FROM reviews WHERE id = $1', [reviewId]);
     res.status(200).json({ message: 'Review deleted successfully' });
   } catch (error) {
     console.error('[DELETE /reviews/:id] Error:', error);
@@ -236,7 +241,7 @@ router.delete('/reviews/:id', authMiddleware, async (req, res): Promise<void> =>
 // ==================== BOOKING ROUTES ====================
 
 // Get user's bookings
-router.get('/bookings/my-bookings', authMiddleware, async (req, res): Promise<void> => {
+router.get('/bookings/my-bookings', authMiddleware, async (req: Request, res: Response): Promise<void> => {
   const authenticatedReq = req as AuthenticatedRequest;
   
   if (!authenticatedReq.user) {
@@ -247,7 +252,7 @@ router.get('/bookings/my-bookings', authMiddleware, async (req, res): Promise<vo
   const user_id = authenticatedReq.user.id;
 
   try {
-    const [bookings] = await db.query<RowDataPacket[]>(
+    const { rows: bookings } = await db.query(
       `SELECT bookings.*, 
               cars.year, 
               models.name AS model_name, 
@@ -256,7 +261,7 @@ router.get('/bookings/my-bookings', authMiddleware, async (req, res): Promise<vo
        JOIN cars ON bookings.car_id = cars.id 
        JOIN models ON cars.model_id = models.id 
        JOIN brands ON models.brand_id = brands.id 
-       WHERE bookings.user_id = ?
+       WHERE bookings.user_id = $1
        ORDER BY bookings.booking_date DESC`,
       [user_id]
     );
@@ -273,7 +278,7 @@ router.get('/bookings/my-bookings', authMiddleware, async (req, res): Promise<vo
 });
 
 // Create a booking
-router.post('/bookings', authMiddleware, async (req, res): Promise<void> => {
+router.post('/bookings', authMiddleware, async (req: Request, res: Response): Promise<void> => {
   const authenticatedReq = req as AuthenticatedRequest;
   
   if (!authenticatedReq.user) {
@@ -295,7 +300,7 @@ router.post('/bookings', authMiddleware, async (req, res): Promise<void> => {
   }
 
   try {
-    const [cars] = await db.query<RowDataPacket[]>('SELECT * FROM cars WHERE id = ?', [carId]);
+    const { rows: cars } = await db.query('SELECT * FROM cars WHERE id = $1', [carId]);
     if (cars.length === 0) {
       res.status(404).json({ error: 'Car not found' });
       return;
@@ -311,13 +316,13 @@ router.post('/bookings', authMiddleware, async (req, res): Promise<void> => {
 
     const formattedBookingDate = format(parsedDate, 'yyyy-MM-dd HH:mm:ss');
 
-    const [result] = await db.query(
-      'INSERT INTO bookings (user_id, car_id, booking_date, type, message, status) VALUES (?, ?, ?, ?, ?, ?)',
+    const { rows } = await db.query(
+      'INSERT INTO bookings (user_id, car_id, booking_date, type, message, status) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id',
       [userId, carId, formattedBookingDate, type, message, 'pending']
     );
     
     res.status(201).json({ 
-      id: (result as any).insertId, 
+      id: rows[0].id, 
       carId, 
       bookingDate: formattedBookingDate, 
       type, 
@@ -335,7 +340,7 @@ router.post('/bookings', authMiddleware, async (req, res): Promise<void> => {
 });
 
 // Delete a booking
-router.delete('/bookings/:id', authMiddleware, async (req, res): Promise<void> => {
+router.delete('/bookings/:id', authMiddleware, async (req: Request, res: Response): Promise<void> => {
   const authenticatedReq = req as AuthenticatedRequest;
   
   if (!authenticatedReq.user) {
@@ -347,8 +352,8 @@ router.delete('/bookings/:id', authMiddleware, async (req, res): Promise<void> =
   const user_id = authenticatedReq.user.id;
 
   try {
-    const [bookings] = await db.query<RowDataPacket[]>(
-      'SELECT * FROM bookings WHERE id = ? AND user_id = ?',
+    const { rows: bookings } = await db.query(
+      'SELECT * FROM bookings WHERE id = $1 AND user_id = $2',
       [bookingId, user_id]
     );
 
@@ -363,10 +368,10 @@ router.delete('/bookings/:id', authMiddleware, async (req, res): Promise<void> =
       return;
     }
 
-    await db.query('DELETE FROM bookings WHERE id = ?', [bookingId]);
+    await db.query('DELETE FROM bookings WHERE id = $1', [bookingId]);
 
     // Update car status back to available
-    await db.query('UPDATE cars SET status = ? WHERE id = ?', ['available', booking.car_id]);
+    await db.query('UPDATE cars SET status = $1 WHERE id = $2', ['available', booking.car_id]);
 
     console.log(`[DELETE /bookings/:id] Deleted booking ${bookingId}, car ${booking.car_id} set to available`);
 
@@ -382,28 +387,14 @@ router.delete('/bookings/:id', authMiddleware, async (req, res): Promise<void> =
 
 // ==================== CONTACT ROUTES ====================
 
-router.post('/contacts', authMiddleware, sendContact as RequestHandler);
-router.get('/contacts', authMiddleware, adminMiddleware, getContacts as RequestHandler);
-router.post('/contacts/:id/reply', authMiddleware, adminMiddleware, replyContact as RequestHandler);
-router.delete('/contacts/:id', authMiddleware, adminMiddleware, deleteContact as RequestHandler);
+router.post('/contacts', authMiddleware, createContact);
+router.get('/contacts', authMiddleware, adminMiddleware, getAllContacts);
+router.put('/contacts/:id/status', authMiddleware, adminMiddleware, updateContactStatus);
+router.delete('/contacts/:id', authMiddleware, adminMiddleware, deleteContact);
 
 // ==================== REPORT ROUTES ====================
 
-// Mock ถ้า controller ยังไม่มี (ใช้ date ปัจจุบัน 2025-10-21)
-router.get('/reports/user-activity', authMiddleware, adminMiddleware, getUserActivity as RequestHandler || ((req: Request, res: Response) => {
-  res.json([
-    { date: '2025-10-21', count: 5 },
-    { date: '2025-10-20', count: 3 },
-    { date: '2025-10-19', count: 7 }
-  ]);
-}));
-
-router.get('/reports/registration-trends', authMiddleware, adminMiddleware, getRegistrationTrends as RequestHandler || ((req: Request, res: Response) => {
-  res.json([
-    { date: '2025-10-21', count: 2 },
-    { date: '2025-09-21', count: 4 },
-    { date: '2025-08-21', count: 1 }
-  ]);
-}));
+router.get('/reports/user-activity', authMiddleware, adminMiddleware, getUserActivity);
+router.get('/reports/registration-trends', authMiddleware, adminMiddleware, getRegistrationTrends);
 
 export default router;

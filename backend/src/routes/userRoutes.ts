@@ -1,25 +1,22 @@
+// src/routes/userRoutes.ts
+
 import { Router, Request, Response } from 'express';
 import { authMiddleware, adminMiddleware } from '../middleware/auth';
 import db from '../config/db';
-import { RowDataPacket, ResultSetHeader } from 'mysql2';
 import bcrypt from 'bcryptjs';
 
 const router = Router();
 
-// ⚠️ CRITICAL: Routes with specific paths MUST come BEFORE dynamic routes
-// 🔑 หลักการ: route ที่มีชื่อเฉพาะเจาะจง ต้องอยู่ก่อน route ที่เป็น parameter
-
 // ========================================
-// 1️⃣ GET /api/users/admin-email (admin only)
-// ✅ ต้องอยู่ก่อน /:userId เสมอ!
+// 1. GET /api/users/admin-email (admin only)
 // ========================================
 router.get('/admin-email', authMiddleware, adminMiddleware, async (req: Request, res: Response): Promise<void> => {
   try {
-    const [admins] = await db.query<RowDataPacket[]>(
-      'SELECT email FROM users WHERE role = ? LIMIT 1',
+    const { rows: admins } = await db.query(
+      'SELECT email FROM users WHERE role = $1 LIMIT 1',
       ['admin']
     );
-    
+
     if (admins.length > 0) {
       res.status(200).json({ success: true, email: admins[0].email });
     } else {
@@ -32,15 +29,16 @@ router.get('/admin-email', authMiddleware, adminMiddleware, async (req: Request,
 });
 
 // ========================================
-// 2️⃣ GET /api/users (Get all users)
+// 2. GET /api/users (Get all users)
 // ========================================
 router.get('/', authMiddleware, adminMiddleware, async (req: Request, res: Response): Promise<void> => {
   try {
-    const [users] = await db.query<RowDataPacket[]>(
+    const { rows: users } = await db.query(
       `SELECT id, name, email, role, 
               CASE WHEN status = 1 THEN 'Active' ELSE 'Inactive' END as status
        FROM users ORDER BY created_at DESC`
     );
+
     res.status(200).json(users.map((user: any) => ({
       id: user.id.toString(),
       name: user.name,
@@ -55,14 +53,14 @@ router.get('/', authMiddleware, adminMiddleware, async (req: Request, res: Respo
 });
 
 // ========================================
-// 3️⃣ GET /api/users/:userId (Get single user)
-// ✅ ต้องอยู่หลัง /admin-email
+// 3. GET /api/users/:userId (Get single user)
 // ========================================
 router.get('/:userId', authMiddleware, adminMiddleware, async (req: Request, res: Response): Promise<void> => {
+  const { userId } = req.params;
+
   try {
-    const { userId } = req.params;
-    const [users] = await db.query<RowDataPacket[]>(
-      'SELECT id, name, email, role, status FROM users WHERE id = ?',
+    const { rows: users } = await db.query(
+      'SELECT id, name, email, role, status FROM users WHERE id = $1',
       [userId]
     );
 
@@ -79,11 +77,11 @@ router.get('/:userId', authMiddleware, adminMiddleware, async (req: Request, res
 });
 
 // ========================================
-// 4️⃣ POST /api/users (Create new user)
+// 4. POST /api/users (Create new user)
 // ========================================
 router.post('/', authMiddleware, adminMiddleware, async (req: Request, res: Response): Promise<void> => {
   const { name, email, password, role, status } = req.body;
-  
+
   // Validation
   if (!name || !email || !password || !role) {
     res.status(400).json({ error: 'Name, email, password, and role are required' });
@@ -96,9 +94,9 @@ router.post('/', authMiddleware, adminMiddleware, async (req: Request, res: Resp
   }
 
   try {
-    // ตรวจสอบว่า email ซ้ำหรือไม่
-    const [existingUsers] = await db.query<RowDataPacket[]>(
-      'SELECT id FROM users WHERE email = ?',
+    // ตรวจสอบ email ซ้ำ
+    const { rows: existingUsers } = await db.query(
+      'SELECT id FROM users WHERE email = $1',
       [email]
     );
 
@@ -107,48 +105,41 @@ router.post('/', authMiddleware, adminMiddleware, async (req: Request, res: Resp
       return;
     }
 
-    // Hash password ด้วย bcrypt
+    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Insert user ใหม่
-    const [result] = await db.query<ResultSetHeader>(
-      'INSERT INTO users (name, email, password, role, status, created_at) VALUES (?, ?, ?, ?, ?, NOW())',
-      [name, email, hashedPassword, role, status || 1]
+    // Insert user
+    const { rows } = await db.query(
+      'INSERT INTO users (name, email, password, role, status, created_at) VALUES ($1, $2, $3, $4, $5, NOW()) RETURNING id',
+      [name, email, hashedPassword, role, status ?? 1]
     );
-    
+
     res.status(201).json({ 
-      id: result.insertId, 
+      id: rows[0].id, 
       message: 'User created successfully' 
     });
   } catch (error: any) {
     console.error('[POST /api/users] Error:', error);
-    
-    if (error.code === 'ER_DUP_ENTRY') {
-      res.status(400).json({ error: 'Email is already registered' });
-      return;
-    }
-    
     res.status(500).json({ error: 'Failed to create user' });
   }
 });
 
 // ========================================
-// 5️⃣ PUT /api/users/:userId (Update user)
+// 5. PUT /api/users/:userId (Update user)
 // ========================================
 router.put('/:userId', authMiddleware, adminMiddleware, async (req: Request, res: Response): Promise<void> => {
+  const { userId } = req.params;
+  const { name, email, password, role } = req.body;
+
+  if (!name || !email || !role) {
+    res.status(400).json({ error: 'Name, email, and role are required' });
+    return;
+  }
+
   try {
-    const { userId } = req.params;
-    const { name, email, password, role } = req.body;
-
-    // Validation
-    if (!name || !email || !role) {
-      res.status(400).json({ error: 'Name, email, and role are required' });
-      return;
-    }
-
-    // ตรวจสอบว่า email ซ้ำกับ user อื่นหรือไม่
-    const [existingUsers] = await db.query<RowDataPacket[]>(
-      'SELECT id FROM users WHERE email = ? AND id != ?',
+    // ตรวจสอบ email ซ้ำ (ยกเว้นตัวเอง)
+    const { rows: existingUsers } = await db.query(
+      'SELECT id FROM users WHERE email = $1 AND id != $2',
       [email, userId]
     );
 
@@ -157,46 +148,53 @@ router.put('/:userId', authMiddleware, adminMiddleware, async (req: Request, res
       return;
     }
 
-    // Build update query dynamically
-    let updateQuery = 'UPDATE users SET name = ?, email = ?, role = ?';
+    // Build update fields
+    let updateFields = ['name = $1', 'email = $2', 'role = $3'];
     let params: any[] = [name, email, role];
 
-    // เฉพาะถ้ามีการเปลี่ยน password
     if (password && password.trim() !== '') {
       if (password.length < 6) {
         res.status(400).json({ error: 'Password must be at least 6 characters' });
         return;
       }
       const hashedPassword = await bcrypt.hash(password, 10);
-      updateQuery += ', password = ?';
+      updateFields.push('password = $' + (params.length + 1));
       params.push(hashedPassword);
     }
 
-    updateQuery += ' WHERE id = ?';
+    updateFields.push('updated_at = NOW()');
     params.push(userId);
 
-    await db.query(updateQuery, params);
+    const updateQuery = `UPDATE users SET ${updateFields.join(', ')} WHERE id = $${params.length} RETURNING id, name, email, role`;
+
+    const { rows } = await db.query(updateQuery, params);
+
+    if (rows.length === 0) {
+      res.status(404).json({ error: 'User not found' });
+      return;
+    }
 
     res.status(200).json({ message: 'User updated successfully' });
   } catch (error: any) {
     console.error('[PUT /api/users/:userId] Error:', error);
-    
-    if (error.code === 'ER_DUP_ENTRY') {
-      res.status(400).json({ error: 'Email is already in use' });
-      return;
-    }
-    
     res.status(500).json({ error: 'Failed to update user' });
   }
 });
 
 // ========================================
-// 6️⃣ DELETE /api/users/:id (Delete user)
+// 6. DELETE /api/users/:id (Delete user)
 // ========================================
 router.delete('/:id', authMiddleware, adminMiddleware, async (req: Request, res: Response): Promise<void> => {
-  const userId = parseInt(req.params.id);
+  const { id } = req.params;
+
   try {
-    await db.query('DELETE FROM users WHERE id = ?', [userId]);
+    const { rowCount } = await db.query('DELETE FROM users WHERE id = $1', [id]);
+
+    if (rowCount === 0) {
+      res.status(404).json({ error: 'User not found' });
+      return;
+    }
+
     res.status(200).json({ message: 'User deleted successfully' });
   } catch (error) {
     console.error('[DELETE /api/users/:id] Error:', error);

@@ -1,8 +1,10 @@
 // src/config/db.ts
 import { Pool } from 'pg';
 import dotenv from 'dotenv';
+import path from 'path';
 
-dotenv.config();
+// โหลด .env จาก root ของโปรเจกต์
+dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 
 if (!process.env.DATABASE_URL) {
   console.error('DATABASE_URL is missing!');
@@ -16,7 +18,7 @@ const pool = new Pool({
   idleTimeoutMillis: 30000,
 });
 
-console.log('Neon (PostgreSQL) Config:', {
+console.log('PostgreSQL (Neon) Configuration:', {
   host: new URL(process.env.DATABASE_URL).hostname,
   database: new URL(process.env.DATABASE_URL).pathname.slice(1),
 });
@@ -25,7 +27,7 @@ const testConnection = async (retry = 0, max = 5) => {
   try {
     const client = await pool.connect();
     await client.query('SELECT NOW()');
-    console.log('เชื่อมต่อ Neon สำเร็จ!');
+    console.log('เชื่อมต่อ Neon (PostgreSQL) สำเร็จ');
     client.release();
   } catch (err: any) {
     console.error('Neon connection error:', err.message);

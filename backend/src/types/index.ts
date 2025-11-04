@@ -1,6 +1,19 @@
 import { Request } from 'express';
 import { JwtPayload as JwtPayloadBase } from 'jsonwebtoken';
 
+// เพิ่ม type สำหรับ chart data
+export interface ChartRow {
+  date: string;
+  count: string | number;
+}
+
+// เพิ่ม type สำหรับ recent activity
+export interface ActivityRow {
+  name: string;
+  role: string;
+  login_at: string | Date;
+}
+
 export interface User {
   id: number;
   name?: string;
@@ -54,8 +67,6 @@ export interface Booking {
   id?: number;
   userId: number;
   carId: number;
-  startDate?: Date;
-  endDate?: Date;
   bookingDate?: string;
   status: 'pending' | 'confirmed' | 'canceled' | 'approved' | 'rejected';
   createdAt?: Date;
@@ -73,26 +84,7 @@ export interface Contact {
   file_name?: string;
   file_path?: string;
   status?: 'pending' | 'replied';
-  timestamp?: Date;
   created_at?: Date;
-  updated_at?: Date;
-}
-
-export interface Review {
-  id?: number;
-  user_id: number;
-  car_id: number;
-  rating: number;
-  comment: string;
-  created_at?: Date;
-  updated_at?: Date;
-}
-
-export interface DashboardData {
-  registerData: { date: string; count: number }[];
-  loginData: { date: string; count: number }[];
-  totalRegisters: number;
-  totalLogins: number;
 }
 
 export interface Brand {
@@ -106,23 +98,4 @@ export interface Model {
   brand_id: number;
   name: string;
   created_at?: Date;
-}
-
-export interface ActivityLog {
-  id?: number;
-  user_id: number;
-  action: string;
-  details?: string;
-  timestamp?: Date;
-}
-
-export interface UserActivityData {
-  date: string;
-  registrations: number;
-  logins: number;
-}
-
-export interface RegistrationTrendData {
-  month: string;
-  count: number;
 }

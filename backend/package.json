@@ -47,6 +47,7 @@
   },
   "devDependencies": {
     "@types/date-fns": "^2.6.0",
+    "@types/pg": "^8.15.6",
     "nodemon": "^3.1.9",
     "ts-node": "^10.9.2"
   }
