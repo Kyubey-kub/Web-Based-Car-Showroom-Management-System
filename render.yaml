@@ -20,10 +20,6 @@ services:
         generateValue: true
       - key: JWT_EXPIRES_IN
         value: 7d
-      - key: FRONTEND_URL
-        value: https://your-app.vercel.app
-      - key: CORS_ORIGINS
-        value: https://your-app.vercel.app,http://localhost:3000
 
 databases:
   - name: neondb
