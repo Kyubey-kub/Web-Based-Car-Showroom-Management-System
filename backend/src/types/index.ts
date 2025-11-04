@@ -1,7 +1,6 @@
 import { Request } from 'express';
 import { JwtPayload as JwtPayloadBase } from 'jsonwebtoken';
 
-// User interface
 export interface User {
   id: number;
   name?: string;
@@ -13,7 +12,6 @@ export interface User {
   exp?: number;
 }
 
-// JWT Payload interface
 export interface JwtPayload extends JwtPayloadBase {
   id: number;
   email?: string;
@@ -22,12 +20,10 @@ export interface JwtPayload extends JwtPayloadBase {
   exp?: number;
 }
 
-// Authenticated Request interface
 export interface AuthenticatedRequest extends Request {
   user?: User;
 }
 
-// Custom Request interface (สำหรับ compatibility)
 export interface CustomRequest extends Request {
   user?: {
     id: number;
@@ -38,7 +34,6 @@ export interface CustomRequest extends Request {
   };
 }
 
-// Car interface
 export interface Car {
   id?: number;
   modelId: number;
@@ -55,7 +50,6 @@ export interface Car {
   updated_at?: Date;
 }
 
-// Booking interface
 export interface Booking {
   id?: number;
   userId: number;
@@ -69,7 +63,6 @@ export interface Booking {
   message?: string;
 }
 
-// Contact interface
 export interface Contact {
   id?: number;
   user_id?: number;
@@ -85,7 +78,6 @@ export interface Contact {
   updated_at?: Date;
 }
 
-// Review interface
 export interface Review {
   id?: number;
   user_id: number;
@@ -96,7 +88,6 @@ export interface Review {
   updated_at?: Date;
 }
 
-// Dashboard Data interface
 export interface DashboardData {
   registerData: { date: string; count: number }[];
   loginData: { date: string; count: number }[];
@@ -104,14 +95,12 @@ export interface DashboardData {
   totalLogins: number;
 }
 
-// Brand interface
 export interface Brand {
   id?: number;
   name: string;
   created_at?: Date;
 }
 
-// Model interface
 export interface Model {
   id?: number;
   brand_id: number;
@@ -119,7 +108,6 @@ export interface Model {
   created_at?: Date;
 }
 
-// Activity Log interface
 export interface ActivityLog {
   id?: number;
   user_id: number;
@@ -128,7 +116,6 @@ export interface ActivityLog {
   timestamp?: Date;
 }
 
-// Report Data interfaces
 export interface UserActivityData {
   date: string;
   registrations: number;
