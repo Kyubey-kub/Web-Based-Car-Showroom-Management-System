@@ -1,66 +1,31 @@
+# render.yaml
 services:
-  # Backend API Service
   - type: web
     name: carshowroom-backend
-    runtime: node
+    env: node
     region: singapore
     plan: free
     branch: main
     rootDir: backend
     buildCommand: npm install && npm run build
     startCommand: node dist/server.js
-    healthCheckPath: /api/health
     envVars:
       - key: NODE_ENV
         value: production
-      - key: PORT
-        value: 5000
-      - key: DB_HOST
+      - key: DATABASE_URL
         fromDatabase:
-          name: carshowroom-db
-          property: host
-      - key: DB_PORT
-        fromDatabase:
-          name: carshowroom-db
-          property: port
-      - key: DB_USER
-        fromDatabase:
-          name: carshowroom-db
-          property: user
-      - key: DB_PASSWORD
-        fromDatabase:
-          name: carshowroom-db
-          property: password
-      - key: DB_NAME
-        fromDatabase:
-          name: carshowroom-db
-          property: database
+          name: neondb
+          property: connectionString
       - key: JWT_SECRET
         generateValue: true
-        sync: false
       - key: JWT_EXPIRES_IN
         value: 7d
       - key: FRONTEND_URL
         value: https://your-app.vercel.app
       - key: CORS_ORIGINS
-        value: https://your-app.vercel.app,http://localhost:5173,http://localhost:3000
-      - key: EMAIL_USER
-        value: myemail@gmail.com
-      - key: EMAIL_PASS
-        value: abcd efgh ijkl mnop
-      - key: EMAIL_ADMIN
-        value: admin@yourdomain.com
-      - key: MAX_FILE_SIZE
-        value: 5242880
-      - key: UPLOAD_PATH
-        value: ./uploads
-      - key: API_URL
-        sync: false
+        value: https://your-app.vercel.app,http://localhost:3000
 
 databases:
-  # MySQL Database
-  - name: carshowroom-db
-    databaseName: car_showroom
-    user: car_showroom_user
+  - name: neondb
     plan: free
     region: singapore
