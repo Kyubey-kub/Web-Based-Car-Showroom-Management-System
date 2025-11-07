@@ -1,13 +1,12 @@
+// src/types/index.ts
 import { Request } from 'express';
 import { JwtPayload as JwtPayloadBase } from 'jsonwebtoken';
 
-// เพิ่ม type สำหรับ chart data
 export interface ChartRow {
   date: string;
   count: string | number;
 }
 
-// เพิ่ม type สำหรับ recent activity
 export interface ActivityRow {
   name: string;
   role: string;
@@ -83,7 +82,8 @@ export interface Contact {
   message: string;
   file_name?: string;
   file_path?: string;
-  status?: 'pending' | 'replied';
+  status?: 'pending' | 'replied' | 'closed';
+  reply?: string;
   created_at?: Date;
 }
 

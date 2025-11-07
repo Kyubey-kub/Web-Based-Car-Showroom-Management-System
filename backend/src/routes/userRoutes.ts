@@ -1,5 +1,4 @@
 // src/routes/userRoutes.ts
-
 import { Router, Request, Response } from 'express';
 import { authMiddleware, adminMiddleware } from '../middleware/auth';
 import db from '../config/db';
@@ -7,197 +6,129 @@ import bcrypt from 'bcryptjs';
 
 const router = Router();
 
-// ========================================
-// 1. GET /api/users/admin-email (admin only)
-// ========================================
-router.get('/admin-email', authMiddleware, adminMiddleware, async (req: Request, res: Response): Promise<void> => {
+// GET /api/users/admin-email
+router.get('/admin-email', authMiddleware, adminMiddleware, async (req: Request, res: Response) => {
   try {
-    const { rows: admins } = await db.query(
-      'SELECT email FROM users WHERE role = $1 LIMIT 1',
-      ['admin']
-    );
-
-    if (admins.length > 0) {
-      res.status(200).json({ success: true, email: admins[0].email });
-    } else {
-      res.status(200).json({ success: true, email: 'admin@example.com' });
-    }
+    const { rows } = await db.query('SELECT email FROM users WHERE role = $1 LIMIT 1', ['admin']);
+    res.json({ success: true, email: rows[0]?.email || 'admin@example.com' });
   } catch (error) {
-    console.error('[GET /api/users/admin-email] Error:', error);
-    res.status(200).json({ success: true, email: 'admin@example.com' });
+    console.error('[GET /admin-email]', error);
+    res.json({ success: true, email: 'admin@example.com' });
   }
 });
 
-// ========================================
-// 2. GET /api/users (Get all users)
-// ========================================
-router.get('/', authMiddleware, adminMiddleware, async (req: Request, res: Response): Promise<void> => {
+// GET /api/users
+router.get('/', authMiddleware, adminMiddleware, async (req: Request, res: Response) => {
   try {
-    const { rows: users } = await db.query(
-      `SELECT id, name, email, role, 
-              CASE WHEN status = 1 THEN 'Active' ELSE 'Inactive' END as status
-       FROM users ORDER BY created_at DESC`
-    );
-
-    res.status(200).json(users.map((user: any) => ({
-      id: user.id.toString(),
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      status: user.status
+    const { rows } = await db.query(`
+      SELECT id, name, email, role, 
+             CASE WHEN status = 1 THEN 'Active' ELSE 'Inactive' END as status
+      FROM users ORDER BY created_at DESC
+    `);
+    res.json(rows.map((u: any) => ({
+      id: u.id.toString(),
+      name: u.name,
+      email: u.email,
+      role: u.role,
+      status: u.status,
     })));
   } catch (error) {
-    console.error('[GET /api/users] Error:', error);
+    console.error('[GET /users]', error);
     res.status(500).json({ error: 'Failed to fetch users' });
   }
 });
 
-// ========================================
-// 3. GET /api/users/:userId (Get single user)
-// ========================================
-router.get('/:userId', authMiddleware, adminMiddleware, async (req: Request, res: Response): Promise<void> => {
+// GET /api/users/:id
+router.get('/:userId', authMiddleware, adminMiddleware, async (req: Request, res: Response) => {
   const { userId } = req.params;
-
   try {
-    const { rows: users } = await db.query(
-      'SELECT id, name, email, role, status FROM users WHERE id = $1',
-      [userId]
-    );
-
-    if (users.length === 0) {
-      res.status(404).json({ error: 'User not found' });
-      return;
-    }
-
-    res.status(200).json(users[0]);
+    const { rows } = await db.query('SELECT id, name, email, role, status FROM users WHERE id = $1', [userId]);
+    if (!rows[0]) return res.status(404).json({ error: 'User not found' });
+    res.json(rows[0]);
   } catch (error) {
-    console.error('[GET /api/users/:userId] Error:', error);
+    console.error('[GET /user]', error);
     res.status(500).json({ error: 'Failed to fetch user' });
   }
 });
 
-// ========================================
-// 4. POST /api/users (Create new user)
-// ========================================
-router.post('/', authMiddleware, adminMiddleware, async (req: Request, res: Response): Promise<void> => {
+// POST /api/users
+router.post('/', authMiddleware, adminMiddleware, async (req: Request, res: Response) => {
   const { name, email, password, role, status } = req.body;
-
-  // Validation
   if (!name || !email || !password || !role) {
-    res.status(400).json({ error: 'Name, email, password, and role are required' });
-    return;
+    return res.status(400).json({ error: 'Name, email, password, and role are required' });
   }
-
   if (password.length < 6) {
-    res.status(400).json({ error: 'Password must be at least 6 characters' });
-    return;
+    return res.status(400).json({ error: 'Password must be at least 6 characters' });
   }
 
   try {
-    // ตรวจสอบ email ซ้ำ
-    const { rows: existingUsers } = await db.query(
-      'SELECT id FROM users WHERE email = $1',
-      [email]
-    );
+    const { rows: existing } = await db.query('SELECT id FROM users WHERE email = $1', [email]);
+    if (existing.length > 0) return res.status(400).json({ error: 'Email already registered' });
 
-    if (existingUsers.length > 0) {
-      res.status(400).json({ error: 'Email is already registered' });
-      return;
-    }
-
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Insert user
+    const hashed = await bcrypt.hash(password, 10);
     const { rows } = await db.query(
       'INSERT INTO users (name, email, password, role, status, created_at) VALUES ($1, $2, $3, $4, $5, NOW()) RETURNING id',
-      [name, email, hashedPassword, role, status ?? 1]
+      [name, email, hashed, role, status ?? 1]
     );
-
-    res.status(201).json({ 
-      id: rows[0].id, 
-      message: 'User created successfully' 
-    });
+    res.status(201).json({ id: rows[0].id, message: 'User created' });
   } catch (error: any) {
-    console.error('[POST /api/users] Error:', error);
-    res.status(500).json({ error: 'Failed to create user' });
+    console.error('[POST /users]', error);
+    res.status(500).json({ error: error.message || 'Failed to create user' });
   }
 });
 
-// ========================================
-// 5. PUT /api/users/:userId (Update user)
-// ========================================
-router.put('/:userId', authMiddleware, adminMiddleware, async (req: Request, res: Response): Promise<void> => {
+// PUT /api/users/:id ← **แก้ 500 ตรงนี้!**
+router.put('/:userId', authMiddleware, adminMiddleware, async (req: Request, res: Response) => {
   const { userId } = req.params;
   const { name, email, password, role } = req.body;
 
   if (!name || !email || !role) {
-    res.status(400).json({ error: 'Name, email, and role are required' });
-    return;
+    return res.status(400).json({ error: 'Name, email, and role are required' });
   }
 
   try {
-    // ตรวจสอบ email ซ้ำ (ยกเว้นตัวเอง)
-    const { rows: existingUsers } = await db.query(
+    // ตรวจ email ซ้ำ (ยกเว้นตัวเอง)
+    const { rows: dup } = await db.query(
       'SELECT id FROM users WHERE email = $1 AND id != $2',
       [email, userId]
     );
+    if (dup.length > 0) return res.status(400).json({ error: 'Email already in use' });
 
-    if (existingUsers.length > 0) {
-      res.status(400).json({ error: 'Email is already in use by another user' });
-      return;
+    const updates: string[] = ['name = $1', 'email = $2', 'role = $3'];
+    const values: any[] = [name, email, role];
+    let idx = 4;
+
+    if (password && password.trim()) {
+      if (password.length < 6) return res.status(400).json({ error: 'Password too short' });
+      const hashed = await bcrypt.hash(password, 10);
+      updates.push(`password = $${idx++}`);
+      values.push(hashed);
     }
 
-    // Build update fields
-    let updateFields = ['name = $1', 'email = $2', 'role = $3'];
-    let params: any[] = [name, email, role];
+    updates.push(`updated_at = NOW()`);
+    values.push(userId);
 
-    if (password && password.trim() !== '') {
-      if (password.length < 6) {
-        res.status(400).json({ error: 'Password must be at least 6 characters' });
-        return;
-      }
-      const hashedPassword = await bcrypt.hash(password, 10);
-      updateFields.push('password = $' + (params.length + 1));
-      params.push(hashedPassword);
-    }
+    const query = `UPDATE users SET ${updates.join(', ')} WHERE id = $${idx} RETURNING id, name, email, role`;
+    const { rows } = await db.query(query, values);
 
-    updateFields.push('updated_at = NOW()');
-    params.push(userId);
+    if (!rows[0]) return res.status(404).json({ error: 'User not found' });
 
-    const updateQuery = `UPDATE users SET ${updateFields.join(', ')} WHERE id = $${params.length} RETURNING id, name, email, role`;
-
-    const { rows } = await db.query(updateQuery, params);
-
-    if (rows.length === 0) {
-      res.status(404).json({ error: 'User not found' });
-      return;
-    }
-
-    res.status(200).json({ message: 'User updated successfully' });
+    res.json({ message: 'User updated successfully', user: rows[0] });
   } catch (error: any) {
-    console.error('[PUT /api/users/:userId] Error:', error);
-    res.status(500).json({ error: 'Failed to update user' });
+    console.error('[PUT /users]', error);
+    res.status(500).json({ error: error.message || 'Failed to update user' });
   }
 });
 
-// ========================================
-// 6. DELETE /api/users/:id (Delete user)
-// ========================================
-router.delete('/:id', authMiddleware, adminMiddleware, async (req: Request, res: Response): Promise<void> => {
+// DELETE /api/users/:id
+router.delete('/:id', authMiddleware, adminMiddleware, async (req: Request, res: Response) => {
   const { id } = req.params;
-
   try {
     const { rowCount } = await db.query('DELETE FROM users WHERE id = $1', [id]);
-
-    if (rowCount === 0) {
-      res.status(404).json({ error: 'User not found' });
-      return;
-    }
-
-    res.status(200).json({ message: 'User deleted successfully' });
+    if (rowCount === 0) return res.status(404).json({ error: 'User not found' });
+    res.json({ message: 'User deleted' });
   } catch (error) {
-    console.error('[DELETE /api/users/:id] Error:', error);
+    console.error('[DELETE /users]', error);
     res.status(500).json({ error: 'Failed to delete user' });
   }
 });

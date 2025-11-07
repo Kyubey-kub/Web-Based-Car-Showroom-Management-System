@@ -2,11 +2,12 @@
 
 import { Router } from 'express';
 import { authMiddleware, adminMiddleware } from '../middleware/auth';
-import { 
-  createContact,      // เปลี่ยนจาก sendContact
-  getAllContacts,     // เปลี่ยนจาก getContacts
-  updateContactStatus, // เปลี่ยนจาก replyContact
-  deleteContact 
+import {
+  createContact,
+  getAllContacts,
+  getContactById,
+  updateContactStatus,
+  deleteContact,
 } from '../controllers/contactController';
 
 const router = Router();
@@ -16,6 +17,9 @@ router.post('/', authMiddleware, createContact);
 
 // ดูข้อความทั้งหมด (admin เท่านั้น)
 router.get('/', authMiddleware, adminMiddleware, getAllContacts);
+
+// ดูข้อความ 1 รายการ (admin)
+router.get('/:id', authMiddleware, adminMiddleware, getContactById);
 
 // ตอบกลับ/เปลี่ยนสถานะ (admin เท่านั้น)
 router.put('/:id/status', authMiddleware, adminMiddleware, updateContactStatus);
