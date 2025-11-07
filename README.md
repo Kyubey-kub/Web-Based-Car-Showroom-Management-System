@@ -364,6 +364,165 @@ yarn dev
 
 ---
 
+## 📁 Project Structure
+
+```
+Web-Based-Car-Showroom-Management-System/
+│
+├── backend/                          # Backend Application
+│   ├── db/
+│   │   ├── schema.sql               # MySQL schema (legacy)
+│   │   └── schema_postgresql.sql    # PostgreSQL schema (NEW)
+│   ├── src/
+│   │   ├── config/
+│   │   │   └── db.ts                # Database connection (PostgreSQL Pool)
+│   │   ├── controllers/             # Request handlers
+│   │   │   ├── authController.ts    # Authentication logic
+│   │   │   ├── carController.ts     # Car CRUD operations
+│   │   │   ├── userController.ts    # User management
+│   │   │   ├── bookingController.ts # Booking management
+│   │   │   ├── brandController.ts   # Brand management
+│   │   │   ├── contactController.ts # Contact inquiries
+│   │   │   └── reportController.ts  # Report generation
+│   │   ├── middleware/              # Custom middleware
+│   │   │   └── auth.ts              # Authentication middleware
+│   │   ├── routes/                  # API routes
+│   │   │   ├── index.ts             # Routes aggregator
+│   │   │   ├── authRoutes.ts        # Authentication routes
+│   │   │   ├── carRoutes.ts         # Car routes
+│   │   │   ├── userRoutes.ts        # User routes
+│   │   │   ├── contactRoutes.ts     # Contact routes
+│   │   │   └── reportRoutes.ts      # Report routes
+│   │   ├── types/                   # TypeScript types
+│   │   │   ├── index.ts             # Type definitions
+│   │   │   └── express.d.ts         # Express type extensions
+│   │   ├── .env                     # Environment variables (local)
+│   │   └── server.ts                # Entry point
+│   ├── node_modules/                # Dependencies
+│   ├── package.json                 # Backend dependencies
+│   ├── package-lock.json            # Dependency lock file
+│   ├── tsconfig.json                # TypeScript configuration
+│   ├── file_list_backend.txt        # Backend file listing
+│   └── README.md                    # Backend documentation
+│
+├── frontend/                         # Frontend Application
+│   ├── public/                      # Static assets
+│   │   ├── models/                  # 3D models
+│   │   │   └── lamborghini_veneno_2013_3d_model/
+│   │   │       ├── textures/        # Model textures
+│   │   │       │   ├── brake_disc_baseColor.png
+│   │   │       │   ├── carbon_fiber_baseColor.jpeg
+│   │   │       │   ├── front_logo_baseColor.png
+│   │   │       │   ├── TYRE_baseColor.png
+│   │   │       │   ├── tyre_logo_baseColor.png
+│   │   │       │   └── tyre_logo_metallicRoughness.png
+│   │   │       ├── scene.bin        # Binary data
+│   │   │       └── scene.gltf       # GLTF model
+│   │   └── vite.svg                 # Vite logo
+│   ├── src/
+│   │   ├── api/
+│   │   │   └── auth.ts              # API authentication
+│   │   ├── assets/
+│   │   │   └── react.svg            # React logo
+│   │   ├── components/              # React components
+│   │   │   ├── Admin/               # Admin components
+│   │   │   │   ├── Dashboard.tsx    # Admin dashboard
+│   │   │   │   ├── Home.tsx         # Admin home
+│   │   │   │   ├── Contacts.tsx     # Contact management
+│   │   │   │   ├── EditUser.tsx     # User editing
+│   │   │   │   ├── StatCard.tsx     # Statistics card
+│   │   │   │   └── ActivityDetails.tsx # Activity tracking
+│   │   │   ├── Client/              # Client components
+│   │   │   │   ├── Home.tsx         # Client homepage
+│   │   │   │   ├── OurCars.tsx      # Car listing
+│   │   │   │   ├── CarList.tsx      # Car list view
+│   │   │   │   ├── CarCard.tsx      # Car card component
+│   │   │   │   ├── CarDetails.tsx   # Car details view
+│   │   │   │   ├── CarFilter.tsx    # Filter component
+│   │   │   │   ├── MyBookings.tsx   # User bookings
+│   │   │   │   ├── ContactUs.tsx    # Contact form
+│   │   │   │   └── Reviews.tsx      # Customer reviews
+│   │   │   ├── Common/              # Shared components
+│   │   │   │   ├── Navbar.tsx       # Navigation bar
+│   │   │   │   ├── BackToTop.tsx    # Scroll to top
+│   │   │   │   └── GlobalStyles.tsx # Global styling
+│   │   │   ├── AuthForm.tsx         # User auth form
+│   │   │   ├── AuthFormAdmin.tsx    # Admin auth form
+│   │   │   └── CarModel.tsx         # 3D car model
+│   │   ├── context/
+│   │   │   └── AuthContext.tsx      # Auth state management
+│   │   ├── App.tsx                  # Root component
+│   │   ├── App.css                  # App styles
+│   │   ├── main.tsx                 # Entry point
+│   │   ├── index.tsx                # Alternative entry
+│   │   ├── index.js                 # JS entry point
+│   │   ├── index.css                # Global styles
+│   │   ├── types.ts                 # Type definitions
+│   │   └── vite-env.d.ts            # Vite type definitions
+│   ├── dist/                        # Build output (generated)
+│   │   ├── assets/                  # Compiled assets
+│   │   │   ├── index-*.css          # Compiled CSS
+│   │   │   └── index-*.js           # Compiled JS
+│   │   ├── models/                  # Production 3D models
+│   │   │   └── lamborghini_veneno_2013_3d_model/
+│   │   ├── index.html               # Entry HTML
+│   │   └── vite.svg                 # Vite logo
+│   ├── node_modules/                # Dependencies
+│   ├── .env                         # Development environment
+│   ├── .env.production              # Production environment
+│   ├── package.json                 # Frontend dependencies
+│   ├── package-lock.json            # Dependency lock file
+│   ├── yarn.lock                    # Yarn lock file
+│   ├── tsconfig.json                # TypeScript config
+│   ├── tsconfig.app.json            # App TypeScript config
+│   ├── tsconfig.node.json           # Node TypeScript config
+│   ├── vite.config.ts               # Vite configuration
+│   ├── vite.config.js               # Vite JS config
+│   ├── tailwind.config.js           # Tailwind configuration
+│   ├── postcss.config.js            # PostCSS configuration
+│   ├── eslint.config.js             # ESLint configuration
+│   ├── vercel.json                  # Vercel deployment config
+│   ├── index.html                   # HTML template
+│   └── README.md                    # Frontend documentation
+│
+├── uploads/                          # Uploaded files directory
+│   └── .gitkeep                     # Keep empty directory in git
+│
+├── .gitignore                        # Git ignore rules
+├── structure.txt                     # Project structure
+├── render.yaml                       # Render deployment config (NEW)
+└── README.md                         # Project documentation (this file)
+```
+
+### 📂 Directory Descriptions
+
+#### Backend (`/backend`)
+- **db/**: Database schemas and migrations
+  - `schema_postgresql.sql`: PostgreSQL database schema for Neon
+- **src/config/**: Configuration files (database, JWT, etc.)
+- **src/controllers/**: Business logic and request handlers
+- **src/middleware/**: Custom middleware (authentication, validation)
+- **src/routes/**: API endpoint definitions
+- **src/types/**: TypeScript type definitions and interfaces
+
+#### Frontend (`/frontend`)
+- **public/**: Static assets (images, 3D models, fonts)
+- **src/components/**: React components organized by feature
+  - **Admin/**: Admin dashboard and management interfaces
+  - **Client/**: User-facing components
+  - **Common/**: Shared/reusable components
+- **src/context/**: React Context API for state management
+- **src/api/**: API integration and HTTP requests
+
+#### Key Files
+- **render.yaml**: Render deployment configuration (NEW)
+- **vercel.json**: Vercel deployment configuration for frontend
+- **package.json**: Project dependencies and scripts
+- **.env**: Environment variables (not committed to Git)
+- **tsconfig.json**: TypeScript compiler options
+
+---
+
 ## 🚢 Deployment
 
 ### Frontend Deployment (Vercel)
