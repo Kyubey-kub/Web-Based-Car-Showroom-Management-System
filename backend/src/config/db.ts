@@ -47,4 +47,4 @@ const testConnection = async (retry = 0, max = 5) => {
 testConnection();
 
 export type QueryResult<T = any> = { rows: T[]; rowCount: number };
-export default pool;
+export default pool; 
