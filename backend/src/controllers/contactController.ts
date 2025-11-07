@@ -1,5 +1,4 @@
 // src/controllers/contactController.ts
-
 import { Request, Response } from 'express';
 import db from '../config/db';
 import { AuthenticatedRequest } from '../types';
@@ -7,23 +6,23 @@ import { AuthenticatedRequest } from '../types';
 // === ส่งข้อความติดต่อ (client) ===
 export const createContact = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   const { name, email, subject, message, file_name, file_path } = req.body;
-  const userId = req.user?.id || null; // ถ้า login แล้ว ผูกกับ user
+  const userId = req.user?.id || null;
 
-  // ตรวจสอบข้อมูลที่จำเป็น
   if (!name?.trim() || !email?.trim() || !message?.trim()) {
     res.status(400).json({ error: 'Name, email, and message are required' });
     return;
   }
 
   try {
+    // ลบ file_name, file_path ออก เพราะไม่มีในตาราง
     const { rows } = await db.query(
       `INSERT INTO contacts 
-         (user_id, name, email, subject, message, file_name, file_path, status, created_at) 
+         (user_id, name, email, subject, message, status, created_at) 
        VALUES 
-         ($1, $2, $3, $4, $5, $6, $7, 'pending', NOW()) 
+         ($1, $2, $3, $4, $5, 'pending', NOW()) 
        RETURNING 
-         id, user_id, name, email, subject, message, file_name, file_path, status, created_at`,
-      [userId, name, email, subject || null, message, file_name || null, file_path || null]
+         id, user_id, name, email, subject, message, status, created_at`,
+      [userId, name, email, subject || null, message]
     );
 
     res.status(201).json(rows[0]);
@@ -106,9 +105,10 @@ export const updateContactStatus = async (req: AuthenticatedRequest, res: Respon
   }
 
   try {
+    // ลบ updated_at ออก เพราะไม่มีในตาราง
     const { rows } = await db.query(
       `UPDATE contacts 
-       SET status = $1, reply = $2, updated_at = NOW() 
+       SET status = $1, reply = $2
        WHERE id = $3 
        RETURNING *`,
       [status, reply || null, id]

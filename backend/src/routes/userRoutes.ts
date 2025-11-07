@@ -77,7 +77,7 @@ router.post('/', authMiddleware, adminMiddleware, async (req: Request, res: Resp
   }
 });
 
-// PUT /api/users/:id ← **แก้ 500 ตรงนี้!**
+// PUT /api/users/:id — แก้ 500: ลบ updated_at
 router.put('/:userId', authMiddleware, adminMiddleware, async (req: Request, res: Response) => {
   const { userId } = req.params;
   const { name, email, password, role } = req.body;
@@ -105,9 +105,8 @@ router.put('/:userId', authMiddleware, adminMiddleware, async (req: Request, res
       values.push(hashed);
     }
 
-    updates.push(`updated_at = NOW()`);
+    // ลบ updated_at ออก เพราะไม่มีในตาราง
     values.push(userId);
-
     const query = `UPDATE users SET ${updates.join(', ')} WHERE id = $${idx} RETURNING id, name, email, role`;
     const { rows } = await db.query(query, values);
 
