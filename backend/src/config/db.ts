@@ -6,29 +6,26 @@ import path from 'path';
 // โหลด .env จาก root ของโปรเจกต์
 dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 
-if (!process.env.DATABASE_URL) {
+const DATABASE_URL = process.env.DATABASE_URL;
+
+if (!DATABASE_URL) {
   console.error('DATABASE_URL is missing!');
   process.exit(1);
 }
 
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+  connectionString: DATABASE_URL,
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : undefined,
   max: 10,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 2000,
 });
 
-// แยก parse URL ออกมาแล้วเก็บไว้ใน try-catch
-try {
-  const dbUrl = new URL(process.env.DATABASE_URL);
-  console.log('PostgreSQL (Neon) Configuration:', {
-    host: dbUrl.hostname,
-    database: dbUrl.pathname.slice(1),
-  });
-} catch (error) {
-  console.error('Invalid DATABASE_URL format:', error);
-}
+// แสดงข้อมูลการเชื่อมต่อโดยไม่ parse URL
+console.log('PostgreSQL (Neon) Configuration:', {
+  host: DATABASE_URL.includes('@') ? DATABASE_URL.split('@')[1].split('/')[0] : 'unknown',
+  database: DATABASE_URL.includes('/') ? DATABASE_URL.split('/').pop()?.split('?')[0] : 'unknown',
+});
 
 const testConnection = async (retry = 0, max = 5) => {
   try {
