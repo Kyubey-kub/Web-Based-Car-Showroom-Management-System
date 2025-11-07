@@ -19,10 +19,16 @@ const pool = new Pool({
   connectionTimeoutMillis: 2000,
 });
 
-console.log('PostgreSQL (Neon) Configuration:', {
-  host: new URL(process.env.DATABASE_URL).hostname,
-  database: new URL(process.env.DATABASE_URL).pathname.slice(1),
-});
+// แยก parse URL ออกมาแล้วเก็บไว้ใน try-catch
+try {
+  const dbUrl = new URL(process.env.DATABASE_URL);
+  console.log('PostgreSQL (Neon) Configuration:', {
+    host: dbUrl.hostname,
+    database: dbUrl.pathname.slice(1),
+  });
+} catch (error) {
+  console.error('Invalid DATABASE_URL format:', error);
+}
 
 const testConnection = async (retry = 0, max = 5) => {
   try {
@@ -37,7 +43,6 @@ const testConnection = async (retry = 0, max = 5) => {
       setTimeout(() => testConnection(retry + 1, max), 5000);
     } else {
       console.error('Max reconnect attempts reached');
-      process.exit(1);
     }
   }
 };
