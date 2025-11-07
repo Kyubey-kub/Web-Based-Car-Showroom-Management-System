@@ -131,12 +131,18 @@ export const getDashboardData = async (req: AuthenticatedRequest, res: Response)
   }
 };
 
+interface RecentActivityRow {
+  name: string;
+  role: string;
+  login_at: string;
+}
+
 export const getRecentActivity = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
-    const { rows } = await db.query<{ name: string; role: string; login_at: string }>(
+    const { rows } = await db.query<RecentActivityRow>(
       'SELECT u.name, l.role, l.login_at FROM login_logs l JOIN users u ON l.user_id = u.id ORDER BY l.login_at DESC LIMIT 3'
     );
-    const activities = rows.map((r) => ({
+    const activities = rows.map((r: RecentActivityRow) => ({
       message: `User ${r.name} (${r.role}) logged in`,
       timestamp: r.login_at,
     }));
@@ -145,4 +151,4 @@ export const getRecentActivity = async (req: AuthenticatedRequest, res: Response
     console.error('Recent activity error:', error);
     res.status(500).json({ error: 'Failed to fetch recent activity' });
   }
-};  
+};
