@@ -129,7 +129,7 @@ Interactive 3D car viewer powered by **Three.js** with Lamborghini Veneno model
 <td width="33%" align="center">
 
 ### 🎭 Animations
-<img src="https://img.icons8.com/fluency/96/motion.png" width="64"/>
+<img src="https://img.icons8.com/fluency/96/animation.png" width="64"/>
 
 Smooth animations & transitions using **Framer Motion** for enhanced UX
 
