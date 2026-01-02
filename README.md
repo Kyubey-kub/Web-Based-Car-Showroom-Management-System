@@ -132,8 +132,8 @@ Visit our live demo: [Web Car Showroom System](https://web-carshowroom-system-gi
 
   <tr>
     <td width="50%">
-      <img src="" alt="Admin Register Page">
-      <p align="center"><b>📊 </b></p>
+      <img src="https://github.com/user-attachments/assets/87f6b9ad-6ed4-496f-ba9f-4857ea4bf747" alt="Client Our Cars Page">
+      <p align="center"><b>📊 Client Our Cars Page</b></p>
     </td>
     <td width="50%">
       <img src="" alt="Admin Login Page">
