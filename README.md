@@ -100,12 +100,12 @@ Visit our live demo: [Web Car Showroom System](https://web-carshowroom-system-gi
 <table>
   <tr>
     <td width="50%">
-      <img src="https://github.com/user-attachments/assets/beffe7a3-eb8d-4364-aa05-34fd30ca45a7" alt="Homepage">
-      <p align="center"><b>🏠 Homepage</b></p>
+      <img src="https://github.com/user-attachments/assets/beffe7a3-eb8d-4364-aa05-34fd30ca45a7" alt="Client Login Page">
+      <p align="center"><b>🏠 Client Login Page</b></p>
     </td>
     <td width="50%">
-      <img src="URL_2" alt="Car Catalog">
-      <p align="center"><b>🚗 Car Catalog</b></p>
+      <img src="https://github.com/user-attachments/assets/5456b386-4fc7-41e9-bf7b-ef2a21408e8e" alt="Client Register Page">
+      <p align="center"><b>🚗 Client Register Page</b></p>
     </td>
   </tr>
   <tr>
