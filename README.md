@@ -97,6 +97,8 @@ Visit our live demo: [Web Car Showroom System](https://web-carshowroom-system-gi
 
 ### 📸 Screenshots
 
+<img width="1919" height="860" alt="Image" src="https://github.com/user-attachments/assets/5456b386-4fc7-41e9-bf7b-ef2a21408e8e" />
+
 > Add your application screenshots here
 
 ---
