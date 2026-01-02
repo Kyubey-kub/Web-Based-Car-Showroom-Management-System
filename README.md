@@ -125,8 +125,30 @@ Visit our live demo: [Web Car Showroom System](https://web-carshowroom-system-gi
       <p align="center"><b>📊 Admin Register Page</b></p>
     </td>
     <td width="50%">
+      <img src="https://github.com/user-attachments/assets/915c63fe-5a81-4eaa-a0f9-086662f27ea8" alt="Client Home Page">
+      <p align="center"><b>📅 Client Home Page</b></p>
+    </td>
+  </tr>
+
+  <tr>
+    <td width="50%">
+      <img src="" alt="Admin Register Page">
+      <p align="center"><b>📊 </b></p>
+    </td>
+    <td width="50%">
       <img src="" alt="Admin Login Page">
-      <p align="center"><b>📅 Admin Login Page</b></p>
+      <p align="center"><b>📅 </b></p>
+    </td>
+  </tr>
+
+  <tr>
+    <td width="50%">
+      <img src="" alt="Admin Register Page">
+      <p align="center"><b>📊 </b></p>
+    </td>
+    <td width="50%">
+      <img src="" alt="Admin Login Page">
+      <p align="center"><b>📅 </b></p>
     </td>
   </tr>
   
