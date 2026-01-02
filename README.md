@@ -894,8 +894,7 @@ Made with ❤️ by [Kyubey-kub](https://github.com/Kyubey-kub)
 
 <a href="#-car-showroom">
   <img src="https://img.shields.io/badge/⬆_Back_to_Top-667eea?style=for-the-badge" alt="Back to Top"/>
+  [⬆ Back to Top]
 </a>
 
 </div>
-
-[⬆ Back to Top]
