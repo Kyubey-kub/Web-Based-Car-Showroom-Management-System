@@ -102,7 +102,7 @@ Visit our live demo: [Web Car Showroom System](https://web-carshowroom-system-gi
 <table>
   <tr>
     <td width="50%">
-      <img src="[https://github.com/Kyubey-kub/Web-Based-Car-Showroom-Management-System/issues/1#issue-3775704849](https://github.com/Kyubey-kub/Web-Based-Car-Showroom-Management-System/issues/1#issue-3775704849)" alt="Client Login Page">
+      ![Client Login Page](https://github.com/Kyubey-kub/Web-Based-Car-Showroom-Management-System/issues/1#issue-3775704849)
       <p align="center"><b>🏠 Client Login Page</b></p>
     </td>
   </tr>
