@@ -110,8 +110,8 @@ Visit our live demo: [Web Car Showroom System](https://web-carshowroom-system-gi
   </tr>
   <tr>
     <td width="50%">
-      <img src="URL_3" alt="Admin Dashboard">
-      <p align="center"><b>📊 Admin Dashboard</b></p>
+      <img src="https://github.com/user-attachments/assets/df71a701-e6b1-41d3-b464-318ba5b8f93f" alt="Reset Password Page">
+      <p align="center"><b>📊 Reset Password Page</b></p>
     </td>
     <td width="50%">
       <img src="URL_4" alt="Booking System">
