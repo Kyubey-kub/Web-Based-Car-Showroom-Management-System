@@ -98,12 +98,6 @@ Visit our live demo: [Web Car Showroom System](https://web-carshowroom-system-gi
 ### 📸 Screenshots
 
 > Add your application screenshots here
-<div align="center">
-
-#### 🔐 Client Login Page
-![Client Login Page](https://github.com/Kyubey-kub/Web-Based-Car-Showroom-Management-System/issues/1#issue-3775704849)
-
-</div>
 
 ---
 
